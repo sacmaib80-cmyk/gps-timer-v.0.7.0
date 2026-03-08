@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>SakuraQ v0.7.2</title>
+    <title>SakuraQ v0.7.3</title>
 
     <style>
       :root{
@@ -84,7 +84,7 @@
     margin: 0 auto;
     padding: 14px 14px 12px;
     border-radius: 26px;
-    overflow: hidden;
+    overflow: visible;
     background: linear-gradient(
       180deg,
       rgba(255,255,255,.90),
@@ -1803,10 +1803,415 @@ background-size: 200% 100%;
   opacity: .9;
   cursor: not-allowed;
 }
-</style>
-  </head>
+/* =========================================
+   SAKURAQ HOME SCENE v1 (SAFE REBOOT)
+   ใช้โชว์ scene อย่างเดียวก่อน
+========================================= */
 
-  <body>
+
+
+/* หน้า home */
+#homeScene{
+  min-height:100vh;
+  display:flex;
+  align-items:stretch;
+  justify-content:center;
+  padding:0;
+}
+
+/* การ์ดห้อง */
+.roomCard{
+  width:100%;
+  max-width:100%;
+  min-height:100vh;
+  background:rgba(255,255,255,.72);
+  border:0;
+  border-radius:0;
+  padding:0;
+}
+
+/* พื้นที่ห้อง */
+.roomScene{
+  position:relative;
+  width:100%;
+  min-height:100vh;
+  overflow:hidden;
+  border-radius:0;
+}
+
+/* ผนังหลัง */
+.roomBack{
+  position:absolute;
+  inset:0;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.72), rgba(255,255,255,.22)),
+    linear-gradient(180deg,#f7f9fc,#f2f5fa);
+}
+
+/* พื้นวงรี */
+.roomFloor{
+  position:absolute;
+  left:50%;
+  bottom:190px;
+  transform:translateX(-50%);
+  width:44%;
+  height:13%;
+  border-radius:50%;
+  background:
+    radial-gradient(circle at 50% 45%, rgba(209,216,226,.7), rgba(226,232,240,.45) 60%, rgba(226,232,240,0) 75%);
+  filter: blur(.2px);
+}
+
+/* asset base */
+.roomAsset{
+  position:absolute;
+  display:block;
+  user-select:none;
+  -webkit-user-drag:none;
+  pointer-events:none;
+}
+
+/* ตำแหน่งของ */
+.deskAsset{
+  width:27%;
+  left:3%;
+  bottom:54%;
+}
+
+.shelfAsset{
+  width:27%;
+  right:14%;
+  top:15%;
+}
+
+.phoneAsset{
+  width:13%;
+  right:10%;
+  bottom:50%;
+}
+
+.dumbbellAsset{
+  width:27%;
+  left:10%;
+  bottom:22%;
+}
+
+.mascotAsset{
+  width:36%;
+  left:50%;
+  bottom:32%;
+  transform:translateX(-50%);
+  filter: drop-shadow(0 10px 18px rgba(99,102,241,.10));
+
+  animation: mascotIdle 3s ease-in-out infinite;
+}
+
+@keyframes mascotIdle{
+
+0%{
+transform:translateX(-50%) translateY(0) scale(1);
+}
+
+50%{
+transform:translateX(-50%) translateY(-3px) scale(1.01);
+}
+
+100%{
+transform:translateX(-50%) translateY(0) scale(1);
+}
+
+}
+
+
+/* =========================
+   HOME HUD (top-right)
+========================= */
+.homeHud{
+  position:absolute;
+  top:18px;
+  right:18px;
+  width:min(44vw, 180px);
+  padding:12px;
+  border-radius:18px;
+  background:rgba(255,255,255,.78);
+  border:1px solid rgba(15,23,42,.08);
+  box-shadow:0 12px 28px rgba(15,23,42,.08);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index:20;
+}
+
+.homeHudTop{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.homeAvatar{
+  width:42px;
+  height:42px;
+  border-radius:999px;
+  overflow:hidden;
+  flex:0 0 42px;
+  border:2px solid rgba(255,255,255,.9);
+  box-shadow:0 4px 12px rgba(15,23,42,.08);
+  background:#fff;
+}
+
+.homeAvatar img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+
+.homeUserMeta{
+  min-width:0;
+}
+
+.homeUserName{
+  font-size:13px;
+  font-weight:900;
+  color:var(--ink);
+  line-height:1.1;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.homeUserSub{
+  margin-top:3px;
+  font-size:10px;
+  color:var(--muted);
+  line-height:1.2;
+}
+
+.homeLevelRow{
+  margin-top:10px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+}
+
+.homeLevelLabel{
+  font-size:10px;
+  font-weight:800;
+  color:var(--muted);
+}
+
+.homeLevelValue{
+  font-size:10px;
+  font-weight:900;
+  color:var(--ink);
+}
+
+.homeLevelBar{
+  margin-top:6px;
+  height:10px;
+  border-radius:999px;
+  overflow:hidden;
+  background:rgba(15,23,42,.08);
+}
+
+.homeLevelFill{
+  width:0%;
+  height:100%;
+  border-radius:999px;
+  background:linear-gradient(90deg, #60a5fa, #22c55e);
+  transition:width .35s ease;
+}
+
+/* mobile */
+@media (max-width:480px){
+  .homeHud{
+    top:14px;
+    left:14px;
+    width:min(48vw, 170px);
+    padding:10px;
+    border-radius:16px;
+  }
+
+  .homeAvatar{
+    width:38px;
+    height:38px;
+    flex:0 0 38px;
+  }
+
+  .homeUserName{
+    font-size:12px;
+  }
+
+  .homeUserSub{
+    font-size:9px;
+  }
+}
+
+
+/* desktop ขยายแบบไม่ลอยมั่ว */
+@media (min-width: 900px){
+  .roomCard{
+    width:min(100%, 460px);
+  }
+}
+
+@media (max-width: 480px){
+  #homeScene{
+    padding:0;
+  }
+
+  .roomCard{
+    width:100%;
+    min-height:100vh;
+    border-radius:0;
+    padding:0;
+  }
+
+  .roomScene{
+    min-height:100vh;
+    border-radius:0;
+  }
+}
+
+/* =========================
+   PAGE SYSTEM
+========================= */
+.page{
+  display:none;
+}
+.page.page-active{
+  display:block;
+}
+
+/* =========================
+   QUEST BAR
+========================= */
+.questBar{
+  position:fixed;
+  left:12px;
+  right:12px;
+  bottom:78px;
+  z-index:120;
+  display:flex;
+  gap:8px;
+  padding:8px;
+  border-radius:18px;
+  background:rgba(255,255,255,.88);
+  border:1px solid rgba(15,23,42,.08);
+  box-shadow:0 12px 30px rgba(15,23,42,.10);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.questTab{
+  flex:1;
+  border:0;
+  border-radius:14px;
+  padding:10px 8px;
+  background:transparent;
+  color:var(--ink);
+  font-size:12px;
+  font-weight:800;
+  box-shadow:none;
+}
+
+.questTab.active{
+  background:linear-gradient(180deg, rgba(96,165,250,.18), rgba(34,197,94,.14));
+  color:#0f172a;
+}
+
+/* =========================
+   BOTTOM NAV
+========================= */
+.bottomNav{
+  position:fixed;
+  left:0;
+  right:0;
+  bottom:0;
+  z-index:130;
+  display:grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap:0;
+  padding:8px 10px calc(8px + env(safe-area-inset-bottom, 0px));
+  background:rgba(255,255,255,.95);
+  border-top:1px solid rgba(15,23,42,.08);
+  box-shadow:0 -10px 24px rgba(15,23,42,.06);
+}
+
+.bottomNavBtn{
+  border:0;
+  background:transparent;
+  color:var(--muted);
+  padding:8px 4px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+  font-size:11px;
+  font-weight:800;
+  box-shadow:none;
+}
+
+.bottomNavBtn span:first-child{
+  font-size:18px;
+  line-height:1;
+}
+
+.bottomNavBtn.active{
+  color:var(--ink);
+}
+
+/* กัน content ชน nav */
+#homeScene{
+  padding-bottom:0;
+}
+
+.app{
+  padding-bottom:150px;
+}
+</style>
+</head>
+<body>
+
+<section id="homeScene" class="page page-active" aria-label="SakuraQ Home Scene">
+  <div class="roomCard">
+    <div class="roomScene">
+      <div class="roomBack"></div>
+      <div class="roomFloor"></div>
+
+      <img src="desk.png" alt="" class="roomAsset deskAsset">
+      <img src="shelf.png" alt="" class="roomAsset shelfAsset">
+      <img src="phone.png" alt="" class="roomAsset phoneAsset">
+      <img src="dumbbell.png" alt="" class="roomAsset dumbbellAsset">
+      <img src="mascot.png" alt="SakuraQ mascot" class="roomAsset mascotAsset">
+    </div>
+    <div class="homeHud">
+  <div class="homeHudTop">
+    <div class="homeAvatar">
+      <img src="logo.png" alt="User avatar">
+    </div>
+
+    <div class="homeUserMeta">
+      <div class="homeUserName">MaAMha</div>
+      <div class="homeUserSub">Level 7 • SakuraQ User</div>
+    </div>
+  </div>
+
+  <div class="homeLevelRow">
+    <div class="homeLevelLabel">Daily Progress</div>
+    <div class="homeLevelValue" id="homeLevelValue">0 / 100</div>
+  </div>
+
+  <div class="homeLevelBar">
+    <div class="homeLevelFill" id="homeLevelFill"></div>
+  </div>
+</div>
+  </div>
+  
+</section>
+
+
+
     <!-- MORNING GATE COVER -->
     <div class="gateCover" id="gateCover" aria-hidden="true">
       <div class="gatePanel" role="dialog" aria-modal="true">
@@ -1860,7 +2265,8 @@ background-size: 200% 100%;
       </div>
     </div>
 
-    <div class="app" id="appScroll">
+    <div class="app page" id="appPage">
+  <div id="appScroll">
       <div class="container">
 
        <div class="topbar">
@@ -1875,7 +2281,7 @@ background-size: 200% 100%;
           <div class="brandMeta">
             <div class="brandTitleRow">
               <h1>SakuraQ</h1>
-              <span class="versionBadge">v0.7.2</span>
+              <span class="versionBadge">v0.7.3</span>
             </div>
             <div class="sub" id="todayText">Today: ----</div>
           </div>
@@ -2266,6 +2672,34 @@ background-size: 200% 100%;
 
   </div>
 </div>
+</div>
+<!-- Quest Category Bar -->
+<div class="questBar" id="questBar">
+  <button class="questTab active" type="button" data-category="Learning">Learn</button>
+  <button class="questTab" type="button" data-category="Work/Project">Work</button>
+  <button class="questTab" type="button" data-category="Physical">Physical</button>
+  <button class="questTab" type="button" data-category="Connection">Connect</button>
+</div>
+<!-- Bottom Navigation -->
+<nav class="bottomNav" aria-label="Main Navigation">
+  <button class="bottomNavBtn active" type="button" data-page="homeScene">
+    <span>🏠</span>
+    <span>Home</span>
+  </button>
+  <button class="bottomNavBtn" type="button" data-page="appPage" data-target="timer">
+    <span>⏱️</span>
+    <span>Timer</span>
+  </button>
+  <button class="bottomNavBtn" type="button" data-page="appPage" data-target="today">
+    <span>📋</span>
+    <span>Today</span>
+  </button>
+  <button class="bottomNavBtn" type="button" data-page="appPage" data-target="menu">
+    <span>☰</span>
+    <span>Menu</span>
+  </button>
+</nav>
+
   <script>
 /* =========================================================
   QPS Timer v0.6.x — Full JS (Safe/Null-Guard) + Gate Page v2
@@ -2568,6 +3002,9 @@ function renderStreak(){
     ELEMENTS
   ========================= */
   const el = {
+
+    homeLevelFill: $("homeLevelFill"),
+homeLevelValue: $("homeLevelValue"),
  
     appScroll: $("appScroll"),
 
@@ -3446,6 +3883,7 @@ function renderTopMenuUI(){
     renderUndoRedo();
     renderGatePageUI();
     renderTopMenuUI(); // if gate page exists
+     renderHomeHud(); 
   }
 
   /* =========================
@@ -4508,19 +4946,23 @@ on(el.notes, "input", saveReportDraft);
     });
   });
   on(el.tipCloseBtn, "click", hideTooltip);
-   on(document, "click", (e)=>{
-    if(el.tooltip?.classList.contains("show")){
-      const t = el.tooltip.contains(e.target);
-      const hb = e.target.classList && e.target.classList.contains("helpBtn");
-      if(!t && !hb) hideTooltip();
-    }
+ on(document, "click", (e)=>{
+  if(el.tooltip?.classList.contains("show")){
+    const t = el.tooltip.contains(e.target);
+    const hb = e.target.classList && e.target.classList.contains("helpBtn");
+    if(!t && !hb) hideTooltip();
+  }
 
-    if(el.topMenu?.classList.contains("show")){
-      const inMenu = el.topMenu.contains(e.target);
-      const isMenuBtn = e.target.closest && e.target.closest("#topMenuBtn");
-      if(!inMenu && !isMenuBtn) closeTopMenu();
+  if(el.topMenu?.classList.contains("show")){
+    const inMenu = el.topMenu.contains(e.target);
+    const isTopMenuBtn = e.target.closest && e.target.closest("#topMenuBtn");
+    const isBottomMenuBtn = e.target.closest && e.target.closest('.bottomNavBtn[data-target="menu"]');
+
+    if(!inMenu && !isTopMenuBtn && !isBottomMenuBtn){
+      closeTopMenu();
     }
-  });
+  }
+});
   on(el.appScroll, "scroll", ()=>{ if(el.tooltip?.classList.contains("show")) hideTooltip(); }, { passive:true });
   on(window, "resize", ()=>{ if(el.tooltip?.classList.contains("show")) hideTooltip(); });
 
@@ -4640,7 +5082,21 @@ on(el.notes, "input", saveReportDraft);
       : `Trigger set → ${gateCfg.triggerHHMM}`
     );
   });
+  
+/* ========= RENDER ========= */
+  function renderHomeHud(){
+  const todayKey = localDateKey();
+  const total = calcDayTotal(todayKey);
+  const percent = Math.max(0, Math.min(100, total));
 
+  if(el.homeLevelValue){
+    el.homeLevelValue.textContent = `${total.toFixed(1)} / 100`;
+  }
+
+  if(el.homeLevelFill){
+    el.homeLevelFill.style.width = `${percent}%`;
+  }
+}
   /* ===== Random Quest events ===== */
   on(el.diceBtn, "click", ()=>{
     if(rqIsCooldown()){
@@ -4818,6 +5274,59 @@ function initDiceDrag(){
     }
   });
 }
+function switchPage(pageId){
+  document.querySelectorAll(".page").forEach(el=>{
+    el.classList.remove("page-active");
+  });
+
+  const target = document.getElementById(pageId);
+  if(target) target.classList.add("page-active");
+
+  document.querySelectorAll(".bottomNavBtn").forEach(btn=>{
+    btn.classList.toggle("active", btn.dataset.page === pageId);
+  });
+}
+
+function setQuestCategory(category){
+  if(el.category){
+    el.category.value = category;
+  }
+  state.selectedCategory = category;
+  saveState();
+
+  document.querySelectorAll(".questTab").forEach(btn=>{
+    btn.classList.toggle("active", btn.dataset.category === category);
+  });
+}
+
+document.querySelectorAll(".bottomNavBtn").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    const pageId = btn.dataset.page;
+    const target = btn.dataset.target;
+
+    switchPage(pageId);
+
+    if(pageId === "appPage"){
+      if(target === "timer") scrollToId("sec-timer");
+      if(target === "today") scrollToId("sec-today");
+      if(target === "menu"){
+        if(typeof openTopMenu === "function") openTopMenu();
+      }
+    }
+  });
+});
+
+document.querySelectorAll(".questTab").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    setQuestCategory(btn.dataset.category);
+
+    // ถ้าไม่ได้อยู่ใน app page ให้เด้งเข้า timer
+    if(!document.getElementById("appPage")?.classList.contains("page-active")){
+      switchPage("appPage");
+    }
+    scrollToId("sec-timer");
+  });
+});
   /* =========================
     BOOT
   ========================= */
@@ -4852,12 +5361,17 @@ function initDiceDrag(){
     rqShowIfEligible();
     rqTickUI();
 
+switchPage("homeScene");
+setQuestCategory(state.selectedCategory || "Learning");
 initDiceDrag();
     startTick();
   }
   boot();
 
+
+
   </script>
+  
   
   </body>
   </html>
