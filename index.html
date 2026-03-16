@@ -2759,7 +2759,7 @@ linear-gradient(
                   <div class="brandMeta">
                     <div class="brandTitleRow">
                       <h1>SakuraQ</h1>
-                      <span class="versionBadge">v0.8.1B</span>
+                      <span class="versionBadge">v0.8.1C</span>
                     </div>
                     <div class="sub" id="todayText">Today: ----</div>
                   </div>
@@ -6572,24 +6572,32 @@ async function ensureNotificationPermission(){
 }
 
 function getQuestCategoryEmoji(cat){
-  const key = String(cat || "").toLowerCase().trim()
+  const key = String(cat || "").toLowerCase().trim();
 
-  if(key === "learning") return "📚"
-  if(key === "work/project") return "💼"
-  if(key === "physical") return "💪"
-  if(key === "connection") return "🤝"
+  const map = {
+    "learning": "📚",
+    "work": "🛠️",
+    "work/project": "🛠️",
+    "physical": "💪",
+    "connection": "💬"
+  };
 
-  return "✅"
+  return map[key] || "✅";
 }
 
 function buildNotificationTitle(){
-  if(!activeQuest) return "SakuraQ • ครบเวลาแล้ว";
-  const emoji = getQuestCategoryEmoji(activeQuest.category);
-  return `${emoji} ${activeQuest.name || "Quest"} • ครบเวลาแล้ว`;
+  return "SakuraQ";
 }
 
 function buildNotificationBody(){
-  return "เปิด SakuraQ เพื่อส่ง Report";
+  if(!activeQuest){
+    return "ครบเวลาแล้ว • เปิด SakuraQ เพื่อส่ง Report";
+  }
+
+  const emoji = getQuestCategoryEmoji(activeQuest.category);
+  const name = activeQuest.name || "Quest";
+
+  return `${emoji} ${name} • ครบเวลาแล้ว • เปิด SakuraQ เพื่อส่ง Report`;
 }
 
 function shouldUseSystemNotification(){
