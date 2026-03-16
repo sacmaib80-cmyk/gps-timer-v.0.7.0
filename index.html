@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>SakuraQ v0.8.1</title>
+    <title>SakuraQ v0.8.2</title>
 
     <style>
       :root{
@@ -2744,6 +2744,70 @@ linear-gradient(
     text-align:center;
   }
 }
+#historyPage{
+  padding: 14px 12px 90px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+.historyDayTabs{
+  display:flex;
+  gap:8px;
+  overflow-x:auto;
+  padding-bottom:6px;
+  margin-bottom:12px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.historyDayTab{
+  flex:0 0 auto;
+  border:0;
+  border-radius:999px;
+  padding:8px 12px;
+  font-size:12px;
+  font-weight:800;
+  background:rgba(255,255,255,.72);
+  color:var(--muted);
+  box-shadow:none;
+  white-space:nowrap;
+}
+
+.historyDayTab.active{
+  background:rgba(255,255,255,.96);
+  color:var(--ink);
+  box-shadow:0 4px 12px rgba(15,23,42,.06);
+}
+.notesItem{
+  padding:10px 12px;
+  border-radius:14px;
+  background:rgba(248,250,252,.7);
+  border:1px solid rgba(15,23,42,.06);
+}
+.historyDayTab.active{
+  background:linear-gradient(
+    180deg,
+    rgba(255,255,255,.98),
+    rgba(255,255,255,.88)
+  );
+  color:var(--ink);
+  box-shadow:
+    0 6px 14px rgba(15,23,42,.08);
+}
+.historyChartStub{
+  height:220px;
+  display:block;
+  border-radius:18px;
+  background:rgba(2,6,23,.03);
+  border:1px dashed rgba(15,23,42,.10);
+  overflow:hidden;
+  padding:8px;
+}
+
+.historySvgChart{
+  width:100%;
+  height:100%;
+  display:block;
+}
 </style>
 </head>
 <body>
@@ -2859,7 +2923,7 @@ linear-gradient(
                   <div class="brandMeta">
                     <div class="brandTitleRow">
                       <h1>SakuraQ</h1>
-                      <span class="versionBadge">v0.8.1</span>
+                      <span class="versionBadge">v0.8.2</span>
                     </div>
                     <div class="sub" id="todayText">Today: ----</div>
                   </div>
@@ -3105,7 +3169,7 @@ linear-gradient(
 
 
     <!-- HISTORY PAGE -->
-   <section id="historyPage" class="page">
+   <section id="historyPage" class="app page">
   <div class="container">
 
     <div class="section">
@@ -3166,7 +3230,7 @@ linear-gradient(
       </div>
 
       <div class="card">
-        <div class="historyBlockTitle">Daily QPS Trend</div>
+        <div class="historyBlockTitle">growth curve</div>
         <div class="historyChartStub" id="histTrendChart">
           Chart coming soon
         </div>
@@ -3207,21 +3271,24 @@ linear-gradient(
     </div>
 
     <!-- 4) DAY DETAIL / QUEST LOG -->
-    <div class="section">
-      <div class="sectionHead">
-        <h2>Day Detail</h2>
-      </div>
+<div class="section">
+  <div class="sectionHead">
+    <h2>Day Detail</h2>
+  </div>
 
-      <div class="card">
-        <div class="historyBlockTitle">Selected Day</div>
-        <div class="historySelectedDay" id="histSelectedDay">--</div>
-        <div class="historySelectedTotal" id="histSelectedTotal">Total: --</div>
+  <div class="card">
+    <div class="historyBlockTitle">Selected Day</div>
 
-        <div class="list" id="histQuestLog">
-          <div class="hint">ยังไม่มีข้อมูล</div>
-        </div>
-      </div>
+    <div class="historyDayTabs" id="histDayTabs"></div>
+
+    <div class="historySelectedDay" id="histSelectedDay">--</div>
+    <div class="historySelectedTotal" id="histSelectedTotal">Total: --</div>
+
+    <div class="list" id="histQuestLog">
+      <div class="hint">ยังไม่มีข้อมูล</div>
     </div>
+  </div>
+</div>
 
     <!-- 5) QUEST NOTES -->
     <div class="section">
@@ -4027,6 +4094,7 @@ histSelectedTotal: $("histSelectedTotal"),
 histQuestLog: $("histQuestLog"),
 
 histNotesFeed: $("histNotesFeed"),
+histDayTabs: $("histDayTabs"),
   };
 
   /* =========================
@@ -4789,7 +4857,9 @@ function showActionLockBar(msg){
       return `
         <div class="item">
           <div class="itemTop">
-            <div class="itemName">${escapeHtml(name)}</div>
+            <div class="itemName">
+  ${getQuestCategoryEmoji(item.category)} ${escapeHtml(name)}
+</div>
             <div class="itemScore">+${round1(questScore).toFixed(1)}</div>
           </div>
           <div class="itemMeta">${escapeHtml(item.category)} • ${mins} min • base ${round1(baseScore).toFixed(1)} + bonus ${bonus}${capNote}</div>
@@ -6093,7 +6163,7 @@ const questScore = baseScore + bonus;
                 <div class="itemScore">+${Number(item.questScore||0).toFixed(1)}</div>
               </div>
               <div class="itemMeta">
-                ${escapeHtml(item.category)} • ${item.minutesSpent} min • base ${Number(item.baseScore||0).toFixed(1)} + bonus ${item.qualityBonus||0}
+                ${item.category} • ${item.minutes} min • ${time} • base ${Number(item.baseScore||0).toFixed(1)} + bonus ${item.qualityBonus||0}
               </div>
               ${item.notes ? `<div class="itemMeta" style="margin-top:8px;">📝 ${escapeHtml(item.notes)}</div>` : ``}
             </div>
@@ -6717,6 +6787,7 @@ if(pageId === "appPage"){
   if(pageId === "historyPage"){
   renderHistoryRangeTabs();
   renderHistoryPageStub();
+  
 }
 }
 }
@@ -7153,13 +7224,20 @@ window.addEventListener("storage", (e)=>{
   }
 });
 
+/* =========================================
+   HISTORY
+========================================= */
+
 function renderHistoryPageStub(){
   const summary = getHistorySummary(historyRange);
   const days = getHistoryDaysByRange(historyRange);
+  const breakdown = getHistoryCategoryBreakdown(historyRange);
 
   if(!historySelectedDay || !days.includes(historySelectedDay)){
     historySelectedDay = days[days.length - 1] || localDateKey(); // วันล่าสุดในช่วง
   }
+
+  renderHistoryDayTabs();
 
   const selectedLog = getDayQuestLog(historySelectedDay);
   const selectedNotes = getDayNotes(historySelectedDay);
@@ -7172,6 +7250,8 @@ function renderHistoryPageStub(){
     summary.bestDayScore > 0 ? `${summary.bestDayScore.toFixed(1)} • ${summary.bestDayKey}` : "--";
   if(el.histCurrentStreak) el.histCurrentStreak.textContent = String(summary.streak);
 
+  renderHistoryTrendChart();
+
   // Day detail
   if(el.histSelectedDay) el.histSelectedDay.textContent = historySelectedDay;
   if(el.histSelectedTotal) el.histSelectedTotal.textContent = `Total: ${selectedTotal.toFixed(1)}`;
@@ -7182,15 +7262,19 @@ function renderHistoryPageStub(){
     }else{
       el.histQuestLog.innerHTML = selectedLog.map(item => {
         const name = normQuestName(item.questName) || "(no name)";
+
+        const time = new Date(item.ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
         return `
           <div class="item">
             <div class="itemTop">
-              <div class="itemName">${escapeHtml(name)}</div>
+              <div class="itemName">
+  ${getQuestCategoryEmoji(item.category)} ${escapeHtml(name)}
+</div>
               <div class="itemScore">+${Number(item.questScore || 0).toFixed(1)}</div>
             </div>
-            <div class="itemMeta">
-              ${escapeHtml(item.category)} • ${Number(item.minutesSpent || 0)} min
-            </div>
+           <div class="itemMeta">
+  ${escapeHtml(item.category)} • ${Number(item.minutesSpent || 0)} min • ${time}
+</div>
           </div>
         `;
       }).join("");
@@ -7207,7 +7291,9 @@ function renderHistoryPageStub(){
         return `
           <div class="item">
             <div class="itemTop">
-              <div class="itemName">${escapeHtml(name)}</div>
+              <div class="itemName">
+  ${getQuestCategoryEmoji(item.category)} ${escapeHtml(name)}
+</div>
               <div class="itemMeta">${historySelectedDay}</div>
             </div>
             <div class="itemMeta" style="margin-top:8px;">
@@ -7219,15 +7305,44 @@ function renderHistoryPageStub(){
     }
   }
 
-  // Placeholder ไว้ก่อน
-  if(el.histLearningScore) el.histLearningScore.textContent = "--";
-  if(el.histLearningMeta) el.histLearningMeta.textContent = "Coming soon";
-  if(el.histWorkScore) el.histWorkScore.textContent = "--";
-  if(el.histWorkMeta) el.histWorkMeta.textContent = "Coming soon";
-  if(el.histPhysicalScore) el.histPhysicalScore.textContent = "--";
-  if(el.histPhysicalMeta) el.histPhysicalMeta.textContent = "Coming soon";
-  if(el.histConnectionScore) el.histConnectionScore.textContent = "--";
-  if(el.histConnectionMeta) el.histConnectionMeta.textContent = "Coming soon";
+ if(el.histLearningScore) el.histLearningScore.textContent = breakdown["Learning"].score.toFixed(1);
+if(el.histLearningMeta) el.histLearningMeta.textContent =
+  `${breakdown["Learning"].count} quests • ${breakdown["Learning"].percent}%`;
+
+if(el.histWorkScore) el.histWorkScore.textContent = breakdown["Work/Project"].score.toFixed(1);
+if(el.histWorkMeta) el.histWorkMeta.textContent =
+  `${breakdown["Work/Project"].count} quests • ${breakdown["Work/Project"].percent}%`;
+
+if(el.histPhysicalScore) el.histPhysicalScore.textContent = breakdown["Physical"].score.toFixed(1);
+if(el.histPhysicalMeta) el.histPhysicalMeta.textContent =
+  `${breakdown["Physical"].count} quests • ${breakdown["Physical"].percent}%`;
+
+if(el.histConnectionScore) el.histConnectionScore.textContent = breakdown["Connection"].score.toFixed(1);
+if(el.histConnectionMeta) el.histConnectionMeta.textContent =
+  `${breakdown["Connection"].count} quests • ${breakdown["Connection"].percent}%`;
+}
+function renderHistoryDayTabs(){
+  if(!el.histDayTabs) return;
+
+  const days = getHistoryDaysByRange(historyRange);
+
+  el.histDayTabs.innerHTML = days.map(dayKey => `
+    <button
+      class="historyDayTab ${dayKey === historySelectedDay ? "active" : ""}"
+      type="button"
+      data-day="${dayKey}"
+    >
+      ${dayKey}
+    </button>
+  `).join("");
+
+  el.histDayTabs.querySelectorAll(".historyDayTab").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      historySelectedDay = btn.dataset.day;
+      renderHistoryDayTabs();
+      renderHistoryPageStub();
+    });
+  });
 }
 function renderHistoryRangeTabs(){
   document.querySelectorAll(".rangeTab").forEach(btn=>{
@@ -7241,6 +7356,7 @@ document.querySelectorAll(".rangeTab").forEach(btn=>{
     historySelectedDay = null;
     renderHistoryRangeTabs();
     renderHistoryPageStub();
+    
   });
 });
 function updateTopNavActive(){
@@ -7279,6 +7395,179 @@ function updateTopNavActive(){
   navReportBtn?.classList.toggle("active", active === "report");
 }
 on($("appPage"), "scroll", updateTopNavActive, { passive:true });
+
+function getHistoryCategoryBreakdown(range){
+  const days = getHistoryDaysByRange(range);
+  const data = loadAll();
+
+  const result = {
+    "Learning": { score: 0, count: 0 },
+    "Work/Project": { score: 0, count: 0 },
+    "Physical": { score: 0, count: 0 },
+    "Connection": { score: 0, count: 0 },
+  };
+
+  let totalScore = 0;
+
+  days.forEach(dayKey => {
+    const day = data[dayKey];
+    if(!day || !Array.isArray(day.quests)) return;
+
+    day.quests.forEach(q => {
+      const cat = q.category;
+      const score = Number(q.questScore || 0);
+
+      if(result[cat]){
+        result[cat].score += score;
+        result[cat].count += 1;
+        totalScore += score;
+      }
+    });
+  });
+
+  Object.keys(result).forEach(cat => {
+    const score = result[cat].score;
+    result[cat].score = round1(score);
+    result[cat].percent = totalScore > 0 ? Math.round((score / totalScore) * 100) : 0;
+  });
+
+  return result;
+}
+function getHistoryTrendData(range){
+  const days = getHistoryDaysByRange(range);
+  const data = loadAll();
+
+  return days.map(dayKey => {
+    const day = data[dayKey];
+    return {
+      dayKey,
+      score: day ? Number(day.totalQps || 0) : 0
+    };
+  });
+}
+function renderHistoryTrendChart(){
+  if(!el.histTrendChart) return;
+
+  const points = getHistoryTrendData(historyRange);
+
+  if(!points.length){
+    el.histTrendChart.innerHTML = `<div class="hint">ยังไม่มีข้อมูลกราฟ</div>`;
+    return;
+  }
+
+  const width = 640;
+  const height = 220;
+
+  const padTop = 20;
+  const padRight = 16;
+  const padBottom = 28;
+  const padLeft = 16;
+
+  const innerW = width - padLeft - padRight;
+  const innerH = height - padTop - padBottom;
+
+  const maxScore = Math.max(...points.map(p => p.score), 1);
+
+  const stepX = points.length > 1 ? innerW / (points.length - 1) : 0;
+
+  const coords = points.map((p, i) => {
+    const x = padLeft + (stepX * i);
+    const y = padTop + innerH - ((p.score / maxScore) * innerH);
+    return {
+      ...p,
+      x,
+      y
+    };
+  });
+
+  const polyline = coords.map(p => `${p.x},${p.y}`).join(" ");
+
+  const areaPoints = [
+  `${padLeft},${padTop + innerH}`,
+  ...coords.map(p => `${p.x},${p.y}`),
+  `${coords[coords.length - 1].x},${padTop + innerH}`
+].join(" ");
+
+ const pointStep =
+  historyRange === "3d" ? 1 :
+  historyRange === "7d" ? 1 :
+  historyRange === "30d" ? 3 :
+  7;
+
+const pointDots = coords.map((p, i) => {
+  const isFirst = i === 0;
+  const isLast = i === coords.length - 1;
+  const shouldShow = isFirst || isLast || (i % pointStep === 0);
+
+  if(!shouldShow) return "";
+
+  return `
+    <circle cx="${p.x}" cy="${p.y}" r="3" fill="white" stroke="#22c55e" stroke-width="2"></circle>
+  `;
+}).join("");
+
+const labelStep =
+  historyRange === "3d" ? 1 :
+  historyRange === "7d" ? 1 :
+  historyRange === "30d" ? 5 :
+  7;
+
+const xLabels = coords.map((p, i) => {
+  const isFirst = i === 0;
+  const isLast = i === coords.length - 1;
+  const shouldShow = isFirst || isLast || (i % labelStep === 0);
+
+  if(!shouldShow) return "";
+
+  const shortDay = p.dayKey.slice(5);
+
+  return `
+    <text x="${p.x}" y="${height - 8}" text-anchor="middle" font-size="10" fill="#64748b">
+      ${shortDay}
+    </text>
+  `;
+}).join("");
+
+  const yTop = `
+    <text x="${padLeft}" y="12" text-anchor="start" font-size="10" fill="#64748b">
+      ${maxScore.toFixed(1)}
+    </text>
+  `;
+
+  const yBottom = `
+    <text x="${padLeft}" y="${padTop + innerH}" text-anchor="start" font-size="10" fill="#94a3b8">
+      0
+    </text>
+  `;
+
+  el.histTrendChart.innerHTML = `
+    <svg viewBox="0 0 ${width} ${height}" class="historySvgChart" preserveAspectRatio="none">
+      <line x1="${padLeft}" y1="${padTop + innerH}" x2="${width - padRight}" y2="${padTop + innerH}"
+            stroke="rgba(15,23,42,.10)" stroke-width="1" />
+      <line x1="${padLeft}" y1="${padTop}" x2="${padLeft}" y2="${padTop + innerH}"
+            stroke="rgba(15,23,42,.06)" stroke-width="1" />
+
+            <polygon
+  points="${areaPoints}"
+  fill="rgba(34,197,94,.10)"
+></polygon>
+
+      <polyline
+  fill="none"
+  stroke="#22c55e"
+  stroke-width="2.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        points="${polyline}"
+      ></polyline>
+
+      ${pointDots}
+      ${xLabels}
+      ${yTop}
+      ${yBottom}
+    </svg>
+  `;
+}
   /* =========================
     BOOT
   ========================= */
