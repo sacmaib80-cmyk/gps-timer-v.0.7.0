@@ -550,7 +550,7 @@ backdrop-filter: blur(12px);
   padding: 14px;
   max-width: 760px;
   margin: 0 auto;
-}
+} 
       .divider{ height:1px; background: var(--border); margin: 12px 0; }
 
       .row{ display:grid; gap:10px; grid-template-columns: 1fr; }
@@ -2759,7 +2759,7 @@ linear-gradient(
                   <div class="brandMeta">
                     <div class="brandTitleRow">
                       <h1>SakuraQ</h1>
-                      <span class="versionBadge">v0.8.0</span>
+                      <span class="versionBadge">v0.8.1</span>
                     </div>
                     <div class="sub" id="todayText">Today: ----</div>
                   </div>
@@ -6614,6 +6614,7 @@ async function sendQuestDoneNotification(){
       renotify: false
     });
 
+playQuestDoneSound();
     notified = true;
   }catch(err){
     console.error("SW notification send error:", err);
@@ -6661,6 +6662,34 @@ async function registerSW(){
     console.log("SW registered");
   }catch(err){
     console.error("SW register failed:", err);
+  }
+}
+function playQuestDoneSound(){
+  if(!notificationSound) return;
+
+  try{
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if(!AudioCtx) return;
+
+    const ctx = new AudioCtx();
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(880, ctx.currentTime); // เสียงสูงกำลังดี
+
+    gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.12, ctx.currentTime + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.35);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start();
+    osc.stop(ctx.currentTime + 0.36);
+  }catch(err){
+    console.error("Sound error:", err);
   }
 }
   /* =========================
