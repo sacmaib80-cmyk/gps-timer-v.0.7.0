@@ -2596,7 +2596,10 @@ linear-gradient(
  
 /* ── Page shell ── */
 #historyPage {
-  background: #f0ede6;          /* warm cream, same as screenshot */
+  background:
+    radial-gradient(circle at top left, rgba(214,235,222,.55), transparent 32%),
+    radial-gradient(circle at top right, rgba(235,244,221,.45), transparent 28%),
+    linear-gradient(180deg, #f5f1e8 0%, #ece7dc 100%);
   min-height: 100vh;
   padding: 0 0 100px;
   font-family: 'Sarabun', sans-serif;
@@ -3118,15 +3121,25 @@ linear-gradient(
   font-size:12px;
   font-weight:800;
   text-align:center;
-  background:rgba(255,255,255,.9);
-  color:#6b7280;
-  box-shadow:0 3px 10px rgba(0,0,0,.05);
+  background:rgba(255,255,255,.82);
+  color:#7b8577;
+  box-shadow:0 2px 8px rgba(0,0,0,.04);
+  transition:
+    background .18s ease,
+    color .18s ease,
+    box-shadow .18s ease,
+    transform .18s ease;
 }
 
-.hpRangeTabs .rangeTab.active{
-  background:#2d9e56;
-  color:#fff;
-  box-shadow:0 6px 16px rgba(45,158,86,.22);
+.hpRangeTabs .rangeTab.active,
+.historyDayTab.active{
+  background:#28d15b;
+  color:#ffffff;
+  box-shadow:
+    0 0 0 1px rgba(143,216,167,.28),
+    0 0 12px rgba(143,216,167,.32),
+    0 0 24px rgba(143,216,167,.18);
+  transform:translateY(-1px);
 }
 /* ===== DAY TABS — clean pretty version ===== */
 
