@@ -4115,6 +4115,12 @@ function readMasterTab(){
   }
 }
 
+function isCurrentTabMasterNow(){
+  const current = readMasterTab();
+  if(!current || !current.tabId) return false;
+  return current.tabId === TAB_ID && (Date.now() - Number(current.ts || 0) <= 4000);
+}
+
 function writeMasterTab(){
   const payload = {
     tabId: TAB_ID,
@@ -4156,8 +4162,6 @@ function startTabHeartbeat(){
   tabHeartbeat = setInterval(()=>{
     if(isMasterTab){
       writeMasterTab();
-    }else{
-      acquireMasterTab();
     }
     renderMultiTabState();
   }, 1500);
@@ -6166,7 +6170,7 @@ function rqStartNow(){
 
   acquireMasterTab();
 
-if(!isMasterTab){
+if(!isCurrentTabMasterNow()){
   showActionLockBar("แท็บนี้เป็นแท็บรอง • ยังเริ่มเควสจาก Random Quest ไม่ได้");
   return;
 }
@@ -6213,65 +6217,73 @@ if(!isMasterTab){
   /* =========================
     TIMER TICK
   ========================= */
-  function startTick(){
-    if(tickHandle) clearInterval(tickHandle);
-    tickHandle = setInterval(()=>{
-      renderTimer();
+ function startTick(){
+  if(tickHandle) clearInterval(tickHandle);
 
-      // auto stop if cutting enabled
-      if(state.status === "running" && state.cutEnabled && state.cutMinutes){
-        const ms = computeElapsedMs();
-        const targetMs = state.cutMinutes * 60000;
+  tickHandle = setInterval(()=>{
+    if(!isCurrentTabMasterNow()){
+      if(state.status === "running" || state.status === "paused"){
+        showTimerWarn("แท็บนี้ไม่ใช่แท็บหลัก ระบบหยุดการนับเวลา");
+      }
+      clearInterval(tickHandle);
+      tickHandle = null;
+      return;
+    }
 
-       if(!questFinished && questEndTime && ms >= targetMs){
-  questFinished = true
+    renderTimer();
 
-  const questSnapshot = activeQuest
-    ? { ...activeQuest }
-    : {
-        category: state.selectedCategory,
-        name: state.questName
-      };
+    // auto stop if cutting enabled
+    if(state.status === "running" && state.cutEnabled && state.cutMinutes){
+      const ms = computeElapsedMs();
+      const targetMs = state.cutMinutes * 60000;
 
-  sendQuestDoneNotification(questSnapshot);
-}
+      if(!questFinished && questEndTime && ms >= targetMs){
+        questFinished = true;
 
-        if(ms >= targetMs){
-          if(state.cutMode === "soft"){
-            if(!state.softWarned){
-              state.softWarned = true;
-              state.softDeadlineTs = Date.now() + 10000;
-              saveState();
-              showTimerWarn(`ครบ ${state.cutMinutes} นาทีแล้ว — จะหยุดอัตโนมัติใน 10 วิ`);
-              return;
-            }
-         
-          }
+        const questSnapshot = activeQuest
+          ? { ...activeQuest }
+          : {
+              category: state.selectedCategory,
+              name: state.questName
+            };
 
-          state.softWarned = false;
-          state.softDeadlineTs = 0;
-
-          state.elapsedBefore = targetMs;
-          state.startTs = null;
-          saveState();
-
-          showTimerWarn(`Stop อัตโนมัติ ✅ (${state.cutMinutes} นาที)`);
-          stopQuest();
-        }
+        sendQuestDoneNotification(questSnapshot);
       }
 
-      // Gate tick
-      syncGateRuntimeFromCfg();
-      gateMaybeLock();
-      gateCheckFirstQuestQualify();
-      gateEnforceStartButton();
-      renderGateUX();
+      if(ms >= targetMs){
+        if(state.cutMode === "soft"){
+          if(!state.softWarned){
+            state.softWarned = true;
+            state.softDeadlineTs = Date.now() + 10000;
+            saveState();
+            showTimerWarn(`ครบ ${state.cutMinutes} นาทีแล้ว — จะหยุดอัตโนมัติใน 10 วิ`);
+            return;
+          }
+        }
 
-      // Random tick
-      rqTickUI();
-    }, 250);
-  }
+        state.softWarned = false;
+        state.softDeadlineTs = 0;
 
+        state.elapsedBefore = targetMs;
+        state.startTs = null;
+        saveState();
+
+        showTimerWarn(`Stop อัตโนมัติ ✅ (${state.cutMinutes} นาที)`);
+        stopQuest();
+      }
+    }
+
+    // Gate tick
+    syncGateRuntimeFromCfg();
+    gateMaybeLock();
+    gateCheckFirstQuestQualify();
+    gateEnforceStartButton();
+    renderGateUX();
+
+    // Random tick
+    rqTickUI();
+  }, 250);
+}
   /* =========================
     ACTIONS
   ========================= */
@@ -6294,16 +6306,22 @@ if(!isMasterTab){
   async function startQuest(){
   if(state.status !== "idle") return;
 
-  acquireMasterTab();
+  const okMaster = acquireMasterTab();
 
-if(!isMasterTab){
-  showActionLockBar("  อ้ะ! แท็บนี้เป็นแท็บรอง ไปใช้แท็บหลัก หรือปิดอีกแท็บก่อน  ");
+if(!okMaster){
+  showActionLockBar("อ้ะ! แท็บนี้เป็นแท็บรอง ไปใช้แท็บหลัก หรือปิดอีกแท็บก่อน");
   return;
 }
 
   resetNotificationFlags();
 
   const perm = await ensureNotificationPermission();
+console.log("Notification permission:", perm);
+
+if(!isCurrentTabMasterNow()){
+  showActionLockBar("แท็บนี้เสียสิทธิ์แท็บหลักระหว่างเริ่มเควส กรุณาใช้แท็บหลัก");
+  return;
+}
   console.log("Notification permission:", perm);
 
   if(!gateCanStartQuest()){
@@ -6355,30 +6373,47 @@ if(!isMasterTab){
   }
 }
 
-  function pauseQuest(){
-    if(state.status!=="running") return;
-    const now = Date.now();
-    state.elapsedBefore = computeElapsedMs(now);
-    state.startTs = null;
-    state.status = "paused";
-    state.softWarned = false;
-    state.softDeadlineTs = 0;
-    saveState();
-    updateUI();
+ function pauseQuest(){
+  if(state.status !== "running") return;
+
+  if(!isCurrentTabMasterNow()){
+    showTimerWarn("แท็บนี้ไม่ใช่แท็บหลัก หยุดชั่วคราวไม่ได้");
+    return;
   }
 
+  const now = Date.now();
+  state.elapsedBefore = computeElapsedMs(now);
+  state.startTs = null;
+  state.status = "paused";
+  state.softWarned = false;
+  state.softDeadlineTs = 0;
+  saveState();
+  updateUI();
+}
+
   function resumeQuest(){
-    if(state.status!=="paused") return;
-    state.status="running";
-    state.startTs=Date.now();
-    state.softWarned = false;
-    state.softDeadlineTs = 0;
-    saveState();
-    updateUI();
+  if(state.status !== "paused") return;
+
+  if(!isCurrentTabMasterNow()){
+    showTimerWarn("แท็บนี้ไม่ใช่แท็บหลัก Resume ไม่ได้");
+    return;
   }
+
+  state.status="running";
+  state.startTs=Date.now();
+  state.softWarned = false;
+  state.softDeadlineTs = 0;
+  saveState();
+  updateUI();
+}
 
   function stopQuest(){
   if(!(state.status==="running" || state.status==="paused")) return;
+
+  if(!isMasterTab){
+    showTimerWarn("แท็บนี้ไม่ใช่แท็บหลัก Stop ไม่ได้");
+    return;
+  }
 
   const now = Date.now();
   const elapsed = (state.status==="running") ? computeElapsedMs(now) : state.elapsedBefore;
@@ -6412,6 +6447,17 @@ if(!isMasterTab){
   questDurationMs = 0;
   resetNotificationFlags();
 }
+document.addEventListener("visibilitychange", () => {
+  if(document.visibilityState === "visible"){
+    if(state.status === "running" || state.status === "paused"){
+      if(!isMasterTab){
+        if(tickHandle) clearInterval(tickHandle);
+        tickHandle = null;
+        showTimerWarn("ตรวจพบแท็บหลักอีกอัน แท็บนี้หยุดการนับเวลา");
+      }
+    }
+  }
+});
  function discardReport(){
   state.status="idle";
   state.startTs=null;
