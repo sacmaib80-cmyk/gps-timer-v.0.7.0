@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>SakuraQ v0.9.0</title>
+    <title>SakuraQ v0.9.1</title>
 
     <style>
       :root{
@@ -899,15 +899,19 @@ button:disabled{
         border-bottom: 1px solid rgba(255,255,255,.16);
         background: linear-gradient(180deg, rgba(0,0,0,.14), rgba(0,0,0,0));
       }
-      .gateTitle{
-        margin:0;
-        font-size: 18px;
-        font-weight: 950;
-        letter-spacing:.2px;
-        display:flex;
-        gap:10px;
-        align-items:center;
-      }
+      .gatePanelHead .gateTitle{
+  color: #ffffff !important;
+  font-weight: 950;
+  letter-spacing: .3px;
+  text-shadow:
+    0 2px 10px rgba(0,0,0,.42),
+    0 0 12px rgba(255,255,255,.10);
+}
+.gateTitleIcon{
+  background: #ff7a59;
+  border: 1px solid rgba(255,255,255,.35);
+  box-shadow: 0 0 0 1px rgba(0,0,0,.08) inset;
+}
       .gateKicker{
         margin: 6px 0 0;
         font-size: 12px;
@@ -3329,7 +3333,7 @@ linear-gradient(
                   <div class="brandMeta">
                     <div class="brandTitleRow">
                       <h1>SakuraQ</h1>
-                      <span class="versionBadge">v0.9.0</span>
+                      <span class="versionBadge">v0.9.1</span>
                     </div>
                     <div class="sub" id="todayText">Today: ----</div>
                   </div>
@@ -4170,13 +4174,25 @@ function startTabHeartbeat(){
   if(tabHeartbeat) clearInterval(tabHeartbeat);
 
   tabHeartbeat = setInterval(()=>{
-    if(isMasterTab){
+
+    const current = readMasterTab();
+
+    const expired =
+      !current ||
+      !current.tabId ||
+      (Date.now() - Number(current.ts || 0) > 4000);
+
+    if(isCurrentTabMasterNow() || expired){
       writeMasterTab();
+      isMasterTab = true;
+    }else{
+      isMasterTab = false;
     }
+
     renderMultiTabState();
+
   }, 1500);
 }
-
 function stopTabHeartbeat(){
   if(tabHeartbeat){
     clearInterval(tabHeartbeat);
@@ -4215,6 +4231,7 @@ function hasQuestAfterTodayTrigger(){
 
   return today.quests.some(q => Number(q.ts || 0) >= triggerTs);
 }
+
 
   /* =========================
     DATA LAYER
@@ -4750,11 +4767,10 @@ const KEY_DICE_POS = "qps_dice_pos_v1";
     }
 
     if(hasQuestAfterTodayTrigger()){
-      gate.passed = true;
-      gate.locked = false;
-      gate.unlocked = true;
-      saveGate();
-    }
+  gate.passed = true;
+  gate.locked = false;
+  saveGate();
+}
   }
   function syncGateRuntimeFromCfg(){
     gate.enabled = isGateActiveToday();
@@ -4855,14 +4871,13 @@ const KEY_DICE_POS = "qps_dice_pos_v1";
       return;
     }
     if(hasQuestAfterTodayTrigger()){
-      gate.passed = true;
-      gate.unlocked = true;
-      gate.locked = false;
-      saveGate();
-      hideGateCover();
-      hideGateTopBar();
-      return;
-    }
+  gate.passed = true;
+  gate.locked = false;
+  saveGate();
+  hideGateCover();
+  hideGateTopBar();
+  return;
+}
 
     gate.startedAt = Date.now();
     gate.locked = false;
@@ -4934,25 +4949,39 @@ const KEY_DICE_POS = "qps_dice_pos_v1";
     updateStreakAfterChange();
     updateUI();
   }
-  function gateCheckFirstQuestQualify(){
-    if(!isGateActiveToday()) return;
-    if(gate.passed) return;
-    if(!gate.firstQuestStartAt) return;
-    if(state.status !== "running") return;
+ function gateCheckFirstQuestQualify(){
+  if(!isGateActiveToday()) return;
+  if(gate.passed) return;
+  if(!gate.firstQuestStartAt) return;
+  if(state.status !== "running") return;
 
-    const ms = computeElapsedMs();
-    if(ms >= GATE_RULES.qualifyMin * 60000){
-      gate.passed = true;
-      gate.locked = false;
-      gate.unlocked = false;
-      gate.doneBannerUntil = Date.now() + 2000;
-      saveGate();
-      gateGrantBonusIfEligible();
+  const msSinceFirstQuest = Date.now() - Number(gate.firstQuestStartAt || 0);
 
-      // PASS แล้วโชว์ Dice
-      rqShowIfEligible();
-    }
+  console.log("[GATE CHECK]", {
+    isGateActiveToday: isGateActiveToday(),
+    passed: gate.passed,
+    locked: gate.locked,
+    unlocked: gate.unlocked,
+    firstQuestStartAt: gate.firstQuestStartAt,
+    msSinceFirstQuest,
+    needMs: GATE_RULES.qualifyMin * 60000
+  });
+
+  if(msSinceFirstQuest >= GATE_RULES.qualifyMin * 60000){
+    gate.passed = true;
+    gate.locked = false;
+
+    // ถ้าเคย unlock manual มาก่อน ให้คงค่าไว้
+    // เพราะมันเอาไว้บอกว่าโบนัสโดนตัด
+    gate.doneBannerUntil = Date.now() + 2000;
+
+    saveGate();
+    gateGrantBonusIfEligible();
+    renderGateUX();
+    gateEnforceStartButton();
+    rqShowIfEligible();
   }
+}
   function renderGateCoverDisplay(){
     if(el.gateTriggerDisplay) el.gateTriggerDisplay.textContent = (gateCfg.triggerHHMM ? gateCfg.triggerHHMM : "--.--");
     if(el.gateLimitDisplay) el.gateLimitDisplay.textContent = `${GATE_RULES.limitMin}m`;
@@ -6416,10 +6445,15 @@ if(!isCurrentTabMasterNow()){
   setReportVisible(false);
   updateUI();
 
-  if(isGateActiveToday() && gateIsWorldActiveNow() && !gate.passed && !hasQuestAfterTodayTrigger()){
-    gate.firstQuestStartAt = Date.now();
-    saveGate();
-  }
+  if(
+  isGateActiveToday() &&
+  gateIsWorldActiveNow() &&
+  !gate.passed &&
+  !gate.firstQuestStartAt
+){
+  gate.firstQuestStartAt = Date.now();
+  saveGate();
+}
 }
 
  function pauseQuest(){
@@ -6774,6 +6808,9 @@ clearReportDraft();
     }
 
     if(hasQuestAfterTodayTrigger()){
+
+    gate.unlocked = true;
+saveGate(); // ถ้ามี
       gate.passed = true;
       gate.locked = false;
       gate.unlocked = true;
