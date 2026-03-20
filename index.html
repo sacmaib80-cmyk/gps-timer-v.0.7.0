@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>SakuraQ v0.9.1</title>
+    <title>SakuraQ v0.9.2</title>
 
     <style>
       :root{
@@ -207,11 +207,139 @@ background:
   }
 
   .streakNum{
-    font-size:13px;
-    font-weight:900;
+    font-size:24px;
+    font-weight:1000;
     color:#0f172a;
-    line-height:1;
+    line-height:3;
   }
+
+  /* =========================
+   SAKURAQ FIRE ICON
+========================= */
+.sqFire{
+  --fire-w: 18px;
+  --fire-h: 24px;
+  --fire-core: #ffd66b;
+  --fire-mid: #ff9f43;
+  --fire-hot: #ff5a36;
+  --fire-deep: #ff2f55;
+
+  position: relative;
+  width: var(--fire-w);
+  height: var(--fire-h);
+  display: inline-block;
+  flex: 0 0 auto;
+  filter: drop-shadow(0 2px 4px rgba(255,90,54,.22));
+}
+
+.sqFire::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius: 60% 60% 68% 68% / 72% 72% 42% 42%;
+  background:
+    radial-gradient(circle at 50% 78%, var(--fire-core) 0 18%, transparent 19%),
+    radial-gradient(circle at 52% 52%, var(--fire-mid) 0 28%, transparent 29%),
+    radial-gradient(circle at 48% 36%, var(--fire-hot) 0 58%, transparent 59%),
+    linear-gradient(180deg, #ffd8a8 0%, var(--fire-mid) 28%, var(--fire-hot) 62%, var(--fire-deep) 100%);
+  clip-path: polygon(50% 0%, 65% 14%, 76% 28%, 84% 46%, 80% 66%, 67% 84%, 50% 100%, 33% 84%, 20% 66%, 16% 46%, 24% 28%, 35% 14%);
+  transform-origin: 50% 86%;
+  animation: sqFireFlicker 1.9s ease-in-out infinite;
+}
+
+.sqFire::after{
+  content:"";
+  position:absolute;
+  left: 50%;
+  bottom: 4px;
+  width: 36%;
+  height: 44%;
+  transform: translateX(-50%);
+  border-radius: 60% 60% 70% 70% / 78% 78% 36% 36%;
+  background:
+    radial-gradient(circle at 50% 72%, #fff3b0 0 24%, transparent 25%),
+    linear-gradient(180deg, #fff7cc 0%, #ffd86e 55%, #ffae42 100%);
+  clip-path: polygon(50% 0%, 68% 20%, 80% 42%, 72% 68%, 50% 100%, 28% 68%, 20% 42%, 32% 20%);
+  transform-origin: 50% 86%;
+  animation: sqFireInner 1.35s ease-in-out infinite;
+}
+
+@keyframes sqFireFlicker{
+  0%,100%{
+    transform: translateY(0) scaleX(1) scaleY(1) rotate(-2deg);
+  }
+  20%{
+    transform: translateY(-1px) scaleX(.96) scaleY(1.03) rotate(1deg);
+  }
+  42%{
+    transform: translateY(0) scaleX(1.04) scaleY(.98) rotate(-1deg);
+  }
+  68%{
+    transform: translateY(-1px) scaleX(.98) scaleY(1.05) rotate(2deg);
+  }
+}
+
+@keyframes sqFireInner{
+  0%,100%{
+    transform: translateX(-50%) translateY(0) scale(.98);
+    opacity: .96;
+  }
+  50%{
+    transform: translateX(-50%) translateY(-1px) scale(1.08);
+    opacity: 1;
+  }
+}
+
+/* sizes */
+.sqFire.sm{
+  --fire-w: 14px;
+  --fire-h: 19px;
+}
+.sqFire.md{
+  --fire-w: 18px;
+  --fire-h: 24px;
+}
+.sqFire.lg{
+  --fire-w: 22px;
+  --fire-h: 30px;
+}
+
+/* topbar streak */
+.miniStreak{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  padding: 0;
+  border:0;
+  background:transparent;
+}
+.streakNum{
+  font-size:13px;
+  font-weight:900;
+  color:#0f172a;
+  line-height:1;
+}
+
+/* home streak badge */
+.homeStreakMini{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  margin-bottom: 6px;
+}
+.homeStreakMini .homeStreakValue{
+  font-size: 12px;
+  font-weight: 900;
+  color: #0f172a;
+  line-height: 1;
+}
+
+/* history fire wrap */
+.hpFireInline{
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+}
 
   .iconGhostBtn{
     width: 30px;
@@ -2175,6 +2303,52 @@ linear-gradient(
   opacity: .85;
 }
 }
+
+.homeStreakBadge{
+  position:absolute;
+  top:18px;
+  right:18px;
+  z-index:21;
+
+  display:flex;
+  align-items:center;
+  gap:8px;
+
+  padding:10px 14px;
+  border-radius:18px;
+
+  background:rgba(255,255,255,.82);
+  border:1px solid rgba(15,23,42,.08);
+  box-shadow:0 12px 28px rgba(15,23,42,.08);
+
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+}
+
+.homeStreakValue{
+  font-size:18px;
+  font-weight:900;
+  color:var(--ink);
+  line-height:1;
+}
+
+.homeStreakBadge .sqFire{
+  flex:0 0 auto;
+}
+
+@media (max-width:480px){
+  .homeStreakBadge{
+    top:30px;
+    right:32px;
+    padding:9px 12px;
+    border-radius:16px;
+    gap:7px;
+  }
+
+  .homeStreakValue{
+    font-size:17px;
+  }
+}
 /* desktop ขยายแบบไม่ลอยมั่ว */
 @media (min-width: 900px){
   .roomCard{
@@ -3311,6 +3485,8 @@ linear-gradient(
             <div class="homeAvatar">
               <img src="logo.png" alt="User avatar">
             </div>
+            
+            
 
             <div class="homeUserMeta">
               <div class="homeUserName" id="homeUserName">
@@ -3330,9 +3506,19 @@ linear-gradient(
             <div class="homeLevelFill" id="homeLevelFill"></div>
           </div>
         </div>
+
+  <div class="homeStreakBadge" id="homeStreakBadge" aria-label="Current streak">
+  <span class="sqFire md" aria-hidden="true"></span>
+  <span class="homeStreakValue" id="homeStreakValue">1</span>
+</div>
+
       </div>
     </div>
   </section>
+
+  </div>
+
+
 
   <!-- MORNING GATE COVER -->
   <div class="gateCover" id="gateCover" aria-hidden="true">
@@ -3404,7 +3590,7 @@ linear-gradient(
                   <div class="brandMeta">
                     <div class="brandTitleRow">
                       <h1>SakuraQ</h1>
-                      <span class="versionBadge">v0.9.1</span>
+                      <span class="versionBadge">v0.9.2</span>
                     </div>
                     <div class="sub" id="todayText">Today: ----</div>
                   </div>
@@ -3662,8 +3848,10 @@ linear-gradient(
 
       <!-- sub stats -->
       <div class="hpHeroSubRow">
-        <span class="hpHeroSub">🔥 ติด <b id="histCurrentStreak">12</b> วัน</span>
-        <span class="hpHeroSubDivider">/</span>
+<span class="hpHeroSub hpFireInline">
+  <span class="sqFire sm" aria-hidden="true"></span>
+  <span>ติด <b id="histCurrentStreak">12</b> วัน</span>
+</span>        <span class="hpHeroSubDivider">/</span>
         <span class="hpHeroSub">📈 Avg <b id="histAvgDay">40.6</b></span>
       </div>
 
@@ -3715,8 +3903,10 @@ linear-gradient(
 
       <!-- bottom meta -->
       <div class="hpHeroMeta">
-        <span>🔥 Best: <b id="histBestDay">84</b></span>
-        <span class="hpMetaDivider">/</span>
+<span class="hpFireInline">
+  <span class="sqFire sm" aria-hidden="true"></span>
+  <span>Best: <b id="histBestDay">84</b></span>
+</span>        <span class="hpMetaDivider">/</span>
        <span>📈 Change <b id="histChangeValue">--</b></span>
         <span class="hpMetaDivider">/</span>
     <div class="historyRangeTabs hpRangeTabs">
@@ -4151,6 +4341,9 @@ let tabHeartbeat = null;
     const ss = String(s%60).padStart(2,"0");
     return `${mm}:${ss}`;
   }
+  function getSqFire(size = "md"){
+  return `<span class="sqFire ${size}" aria-hidden="true"></span>`;
+}
   function round1(n){ return Math.round(n*10)/10; }
   function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
   function escapeHtml(str){
@@ -4441,13 +4634,19 @@ function calcLevelFromLifetimeQps(totalQps){
   }
 function renderStreak(){
   const s = loadStreak();
-  if(!el.streakPill) return;
 
-  el.streakPill.innerHTML = `
-    <span class="fire">🔥</span>
-    <span class="streakNum">${s.current}</span>
-  `;
-  el.streakPill.title = `Best: ${s.best}`;
+  if(el.streakPill){
+    el.streakPill.innerHTML = `
+      <span class="sqFire sm" aria-hidden="true"></span>
+      <span class="streakNum">${s.current}</span>
+    `;
+    el.streakPill.title = `Best: ${s.best}`;
+  }
+
+  const homeStreakValue = $("homeStreakValue");
+  if(homeStreakValue){
+    homeStreakValue.textContent = s.current;
+  }
 }
   /* =========================
     UNDO/REDO
@@ -4506,6 +4705,7 @@ function renderStreak(){
   ========================= */
   const el = {
 
+homeStreakMini: $("homeStreakMini"),
     homeLevelFill: $("homeLevelFill"),
 homeLevelValue: $("homeLevelValue"),
 homeUserName: $("homeUserName"),
@@ -4674,22 +4874,24 @@ histConsistency: $("histConsistency"),
     STATE (timer)
   ========================= */
   let state = {
-    status: "idle", // idle|running|paused|stopped
-    startTs: null,
-    elapsedBefore: 0,
-    lastElapsedMs: 0,
-    startDateKey: null,
+  status: "idle",
+  startTs: null,
+  elapsedBefore: 0,
+  lastElapsedMs: 0,
+  startDateKey: null,
 
-    selectedCategory: "Learning",
-    questName: "",
+  selectedCategory: "Learning",
+  questName: "",
 
-    cutEnabled: false,
-    cutMinutes: null,
-    cutMode: "hard",
+  cutEnabled: false,
+  cutMinutes: null,
+  cutMode: "hard",
 
-    softWarned: false,
-    softDeadlineTs: 0,
-  };
+  softWarned: false,
+  softDeadlineTs: 0,
+
+  targetEndTs: 0
+};
   let tickHandle = null;
 
   function saveState(){ localStorage.setItem(KEY_STATE, JSON.stringify(state)); }
@@ -5304,6 +5506,67 @@ function renderTopMenuUI(){
     if(state.status==="running" && state.startTs) return state.elapsedBefore + (now - state.startTs);
     return state.elapsedBefore;
   }
+  function isCutSessionActive(){
+  return !!(state.cutEnabled && state.cutMinutes && state.targetEndTs);
+}
+
+function clearCutDeadline(){
+  state.targetEndTs = 0;
+  state.softWarned = false;
+  state.softDeadlineTs = 0;
+}
+
+function forceAutoStop(){
+  if(state.status !== "running") return;
+
+  const targetTs = Number(state.targetEndTs || 0);
+  if(!targetTs) return;
+
+const startTs = Number(state.startTs || 0);
+const lockedElapsed = Math.max(0, targetTs - startTs);
+
+  state.status = "stopped";
+  state.startTs = null;
+  state.elapsedBefore = lockedElapsed;
+  state.lastElapsedMs = lockedElapsed;
+
+  clearCutDeadline();
+  saveState();
+
+  questFinished = true;
+
+  const minutes = Math.max(0, Math.round(lockedElapsed / 60000));
+  if(el.reportMinutes) el.reportMinutes.value = String(minutes);
+  applyBonusRule(minutes);
+
+  const dateKey = state.startDateKey || localDateKey();
+  updateCapHint(dateKey, state.questName);
+
+  clearSubmitMessages();
+  setReportVisible(true);
+  saveReportDraft();
+  updateUI();
+  scrollToId("sec-report");
+
+  activeQuest = null;
+  questStartTime = null;
+  questEndTime = null;
+  questDurationMs = 0;
+  resetNotificationFlags();
+
+  showTimerWarn(`Stop อัตโนมัติ ✅ (${minutes} นาที)`);
+}
+
+function checkAutoStop(){
+  if(state.status !== "running") return;
+
+  const targetTs = Number(state.targetEndTs || 0);
+  if(!targetTs) return;
+
+  if(Date.now() >= targetTs){
+    forceAutoStop();
+  }
+}
   function renderTimer(){
     if(!el.timerText) return;
     const ms = (state.status==="stopped") ? state.lastElapsedMs : computeElapsedMs();
@@ -6392,24 +6655,25 @@ if(!isCurrentTabMasterNow()){
   if(tickHandle) clearInterval(tickHandle);
 
   tickHandle = setInterval(()=>{
-  if(!isCurrentTabMasterNow()){
-    if(state.status === "running" || state.status === "paused"){
-      showTimerWarn("แท็บนี้ไม่ใช่แท็บหลัก ระบบหยุดการนับเวลา");
+    if(!isCurrentTabMasterNow()){
+      if(state.status === "running" || state.status === "paused"){
+        showTimerWarn("แท็บนี้ไม่ใช่แท็บหลัก ระบบหยุดการนับเวลา");
+      }
+      clearInterval(tickHandle);
+      tickHandle = null;
+      updateUI();
+      return;
     }
-    clearInterval(tickHandle);
-    tickHandle = null;
-    updateUI();
-    return;
-  }
 
-  renderTimer();
+    renderTimer();
 
-    // auto stop if cutting enabled
-    if(state.status === "running" && state.cutEnabled && state.cutMinutes){
-      const ms = computeElapsedMs();
-      const targetMs = state.cutMinutes * 60000;
-
-      if(!questFinished && questEndTime && ms >= targetMs){
+    if(state.status === "running"){
+      if(
+        !questFinished &&
+        activeQuest &&
+        state.targetEndTs &&
+        Date.now() >= state.targetEndTs
+      ){
         questFinished = true;
 
         const questSnapshot = activeQuest
@@ -6422,37 +6686,36 @@ if(!isCurrentTabMasterNow()){
         sendQuestDoneNotification(questSnapshot);
       }
 
-      if(ms >= targetMs){
-        if(state.cutMode === "soft"){
-          if(!state.softWarned){
-            state.softWarned = true;
-            state.softDeadlineTs = Date.now() + 10000;
-            saveState();
-            showTimerWarn(`ครบ ${state.cutMinutes} นาทีแล้ว — จะหยุดอัตโนมัติใน 10 วิ`);
-            return;
-          }
+      checkAutoStop();
+
+      if(
+        state.status === "running" &&
+        state.cutEnabled &&
+        state.cutMinutes &&
+        state.targetEndTs
+      ){
+        const msLeft = state.targetEndTs - Date.now();
+
+        if(
+          state.cutMode === "soft" &&
+          !state.softWarned &&
+          msLeft > 0 &&
+          msLeft <= 10000
+        ){
+          state.softWarned = true;
+          state.softDeadlineTs = state.targetEndTs;
+          saveState();
+          showTimerWarn(`ครบ ${state.cutMinutes} นาทีแล้ว — จะหยุดอัตโนมัติใน 10 วิ`);
         }
-
-        state.softWarned = false;
-        state.softDeadlineTs = 0;
-
-        state.elapsedBefore = targetMs;
-        state.startTs = null;
-        saveState();
-
-        showTimerWarn(`Stop อัตโนมัติ ✅ (${state.cutMinutes} นาที)`);
-        stopQuest();
       }
     }
 
-    // Gate tick
     syncGateRuntimeFromCfg();
     gateMaybeLock();
     gateCheckFirstQuestQualify();
     gateEnforceStartButton();
     renderGateUX();
 
-    // Random tick
     rqTickUI();
   }, 250);
 }
@@ -6516,9 +6779,15 @@ if(!isCurrentTabMasterNow()){
   state.lastElapsedMs = 0;
 
   state.cutMinutes = state.cutEnabled ? readCutMinutes() : null;
-  state.cutMode = el.cutMode?.value || "hard";
-  state.softWarned = false;
-  state.softDeadlineTs = 0;
+state.cutMode = el.cutMode?.value || "hard";
+state.softWarned = false;
+state.softDeadlineTs = 0;
+
+if(state.cutEnabled && state.cutMinutes){
+  state.targetEndTs = state.startTs + (state.cutMinutes * 60000);
+}else{
+  state.targetEndTs = 0;
+}
 
   activeQuest = {
     category: state.selectedCategory,
@@ -6539,7 +6808,7 @@ if(!isCurrentTabMasterNow()){
   isGateActiveToday() &&
   gateIsWorldActiveNow() &&
   !gate.passed &&
-  !gate.firstQuestStartAt
+  !hasQuestAfterTodayTrigger()
 ){
   gate.firstQuestStartAt = Date.now();
   saveGate();
@@ -6592,12 +6861,14 @@ if(!isCurrentTabMasterNow()){
   const elapsed = (state.status==="running") ? computeElapsedMs(now) : state.elapsedBefore;
 
   state.status = "stopped";
-  state.startTs = null;
-  state.elapsedBefore = elapsed;
-  state.lastElapsedMs = elapsed;
+state.startTs = null;
+state.elapsedBefore = elapsed;
+state.lastElapsedMs = elapsed;
 
-  questFinished = true;
-  saveState();
+clearCutDeadline();
+
+questFinished = true;
+saveState();
 
   const minutes = Math.max(0, Math.round(elapsed/60000));
   if(el.reportMinutes) el.reportMinutes.value = String(minutes);
@@ -6620,36 +6891,15 @@ if(!isCurrentTabMasterNow()){
   questDurationMs = 0;
   resetNotificationFlags();
 }
-document.addEventListener("visibilitychange", () => {
-  if(document.visibilityState !== "visible") return;
 
-  if(state.status === "running" || state.status === "paused"){
-    const ok = acquireMasterTab();
-
-    if(ok){
-      writeMasterTab();
-      isMasterTab = true;
-
-      if(!tickHandle) startTick();
-      updateUI();
-      return;
-    }
-
-    if(tickHandle) clearInterval(tickHandle);
-    tickHandle = null;
-    showTimerWarn("ตรวจพบแท็บหลักอีกอัน แท็บนี้หยุดการนับเวลา");
-    updateUI();
-  }
-});
  function discardReport(){
   state.status="idle";
-  state.startTs=null;
-  state.elapsedBefore=0;
-  state.lastElapsedMs=0;
-  state.startDateKey=null;
+state.startTs=null;
+state.elapsedBefore=0;
+state.lastElapsedMs=0;
+state.startDateKey=null;
 
-  state.softWarned = false;
-  state.softDeadlineTs = 0;
+clearCutDeadline();
 
   saveState();
   setReportVisible(false);
@@ -7150,6 +7400,8 @@ function loadReportDraft(){
 function clearReportDraft(){
   localStorage.removeItem(REPORT_DRAFT_KEY);
 }
+
+
   /* =========================
     EVENTS
   ========================= */
@@ -7427,23 +7679,14 @@ on(el.notes, "input", saveReportDraft);
   
 
 document.addEventListener("visibilitychange", ()=>{
-  if(document.hidden) {
+  if(document.hidden){
     if(state.status === "stopped"){
       saveReportDraft();
     }
     return;
   }
 
-  if(state.status === "running" && state.cutEnabled && state.cutMinutes){
-    const ms = computeElapsedMs();
-    const targetMs = state.cutMinutes * 60000;
-
-    if(ms >= targetMs && !questFinished){
-      questFinished = true;
-      stopQuest();
-      return;
-    }
-  }
+  checkAutoStop();
 
   syncGateRuntimeFromCfg();
   gateMaybeLock();
@@ -7452,6 +7695,7 @@ document.addEventListener("visibilitychange", ()=>{
   renderGateUX();
   rqTickUI();
   renderGatePageUI();
+  updateUI();
 });
 
 
@@ -7480,6 +7724,14 @@ function renderHomeHud(){
   if(el.homeLevelFill){
     el.homeLevelFill.style.width = `${percent}%`;
   }
+  const streak = loadStreak();
+
+if(el.homeStreakMini){
+  el.homeStreakMini.innerHTML = `
+    ${getSqFire("sm")}
+    <span class="homeStreakValue">${streak.current}</span>
+  `;
+}
 }
 
 function editProfileName(){
@@ -7585,15 +7837,43 @@ on(el.diceBtn, "click", ()=>{
 /* ===== Draft autosave (mobile safe) ===== */
 
 document.addEventListener("visibilitychange", ()=>{
-  if(document.hidden && state.status === "stopped"){
-    saveReportDraft();
+  if(document.hidden){
+    if(state.status === "stopped"){
+      saveReportDraft();
+    }
+    return;
   }
+
+  acquireMasterTab();
+
+  if(state.status === "running" || state.status === "paused"){
+    if(!tickHandle) startTick();
+  }
+
+  checkAutoStop();
+  updateUI();
 });
 
-window.addEventListener("beforeunload", ()=>{
-  if(state.status === "stopped"){
-    saveReportDraft();
+window.addEventListener("focus", ()=>{
+  acquireMasterTab();
+
+  if(state.status === "running" || state.status === "paused"){
+    if(!tickHandle) startTick();
   }
+
+  checkAutoStop();
+  updateUI();
+});
+
+window.addEventListener("pageshow", ()=>{
+  acquireMasterTab();
+
+  if(state.status === "running" || state.status === "paused"){
+    if(!tickHandle) startTick();
+  }
+
+  checkAutoStop();
+  updateUI();
 });
   /* =========================
     BACKGROUND FIX
@@ -8926,6 +9206,7 @@ registerSW();
     loadGate();
     syncGateRuntimeFromCfg();
 
+    checkAutoStop();
      loadReportDraft();
 
 
