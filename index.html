@@ -4450,7 +4450,6 @@ linear-gradient(
 
 </body>
 
-<script src="main.js"></script>
 <script type="module" src="auth.js"></script>
 
   <script>
@@ -5755,16 +5754,27 @@ function clearCutDeadline(){
   state.targetEndTs = 0;
   state.softWarned = false;
   state.softDeadlineTs = 0;
+  state.pauseStartedTs = 0;
 }
 
 function forceAutoStop(){
   if(state.status !== "running") return;
 
-  const targetTs = Number(state.targetEndTs || 0);
-  if(!targetTs) return;
+  const startTs = Number(state.startTs || 0);
+  if(!startTs) return;
 
-const startTs = Number(state.startTs || 0);
-const lockedElapsed = Math.max(0, targetTs - startTs);
+  let finalTs = 0;
+
+  if(state.cutMode === "soft" && state.softWarned && state.softDeadlineTs){
+    finalTs = Number(state.softDeadlineTs || 0);
+  }else{
+    finalTs = Number(state.targetEndTs || 0);
+  }
+
+  if(!finalTs) return;
+
+  const baseElapsed = Number(state.elapsedBefore || 0);
+  const lockedElapsed = Math.max(0, baseElapsed + (finalTs - startTs));
 
   state.status = "stopped";
   state.startTs = null;
@@ -5795,16 +5805,37 @@ const lockedElapsed = Math.max(0, targetTs - startTs);
   questDurationMs = 0;
   resetNotificationFlags();
 
-  showTimerWarn(`Stop อัตโนมัติ ✅ (${minutes} นาที)`);
+  showTimerWarn(`Stop อัตโนมัติ ✅ (${Math.round(lockedElapsed / 1000)} วินาที)`);
 }
 
 function checkAutoStop(){
   if(state.status !== "running") return;
 
+  const now = Date.now();
+
+  if(state.cutMode === "soft"){
+    const targetTs = Number(state.targetEndTs || 0);
+    if(!targetTs) return;
+
+    if(!state.softWarned && now >= targetTs){
+      state.softWarned = true;
+      state.softDeadlineTs = targetTs + 10000;
+      saveState();
+      showTimerWarn(`ครบ ${state.cutMinutes} นาทีแล้ว — จะหยุดอัตโนมัติใน 10 วิ`);
+      return;
+    }
+
+    if(state.softWarned && state.softDeadlineTs && now >= state.softDeadlineTs){
+      forceAutoStop();
+    }
+
+    return;
+  }
+
   const targetTs = Number(state.targetEndTs || 0);
   if(!targetTs) return;
 
-  if(Date.now() >= targetTs){
+  if(now >= targetTs){
     forceAutoStop();
   }
 }
@@ -6908,48 +6939,70 @@ if(!isCurrentTabMasterNow()){
 
     renderTimer();
 
-    if(state.status === "running"){
-      if(
-        !questFinished &&
-        activeQuest &&
-        state.targetEndTs &&
-        Date.now() >= state.targetEndTs
-      ){
-        questFinished = true;
+    if(state.status === "running" && state.cutEnabled && state.targetEndTs){
+  const now = Date.now();
 
-        const questSnapshot = activeQuest
-          ? { ...activeQuest }
-          : {
-              category: state.selectedCategory,
-              name: state.questName
-            };
+  // HARD STOP
+  if(state.cutMode === "hard"){
+    if(
+      !questFinished &&
+      activeQuest &&
+      now >= state.targetEndTs
+    ){
+      questFinished = true;
 
-        sendQuestDoneNotification(questSnapshot);
-      }
+      const questSnapshot = activeQuest
+        ? { ...activeQuest }
+        : {
+            category: state.selectedCategory,
+            name: state.questName
+          };
 
-      checkAutoStop();
-
-      if(
-        state.status === "running" &&
-        state.cutEnabled &&
-        state.cutMinutes &&
-        state.targetEndTs
-      ){
-        const msLeft = state.targetEndTs - Date.now();
-
-        if(
-          state.cutMode === "soft" &&
-          !state.softWarned &&
-          msLeft > 0 &&
-          msLeft <= 10000
-        ){
-          state.softWarned = true;
-          state.softDeadlineTs = state.targetEndTs;
-          saveState();
-          showTimerWarn(`ครบ ${state.cutMinutes} นาทีแล้ว — จะหยุดอัตโนมัติใน 10 วิ`);
-        }
-      }
+      sendQuestDoneNotification(questSnapshot);
     }
+
+    if(now >= state.targetEndTs){
+      forceAutoStop();
+      return;
+    }
+  }
+
+  // SOFT STOP
+  if(state.cutMode === "soft"){
+    // ครบเวลาแล้ว แต่ยังไม่เริ่มช่วง grace 10 วิ
+    if(!state.softWarned && now >= state.targetEndTs){
+      state.softWarned = true;
+      state.softDeadlineTs = state.targetEndTs + 10000;
+      saveState();
+
+      showTimerWarn(`ครบ ${state.cutMinutes} นาทีแล้ว — จะหยุดอัตโนมัติใน 10 วิ`);
+    }
+
+    // ส่ง notification ตอนครบเวลาจริง
+    if(
+      !questFinished &&
+      activeQuest &&
+      now >= state.targetEndTs
+    ){
+      questFinished = true;
+
+      const questSnapshot = activeQuest
+        ? { ...activeQuest }
+        : {
+            category: state.selectedCategory,
+            name: state.questName
+          };
+
+      sendQuestDoneNotification(questSnapshot);
+    }
+
+    // ครบ grace period แล้วค่อยหยุด
+    if(state.softWarned && state.softDeadlineTs && now >= state.softDeadlineTs){
+      forceAutoStop();
+      return;
+    }
+  }
+} 
 
     syncGateRuntimeFromCfg();
     gateMaybeLock();
@@ -6989,7 +7042,7 @@ if(!isCurrentTabMasterNow()){
   }
 
   resetNotificationFlags();
-    rememberQuestName(questName);
+rememberQuestName(state.questName)
 
   const perm = await ensureNotificationPermission();
   console.log("Notification permission:", perm);
@@ -7057,20 +7110,19 @@ if(state.cutEnabled && state.cutMinutes){
 }
 }
 
- function pauseQuest(){
+function pauseQuest(){
   if(state.status !== "running") return;
 
-  if(!isCurrentTabMasterNow()){
-    showTimerWarn("แท็บนี้ไม่ใช่แท็บหลัก หยุดชั่วคราวไม่ได้");
-    return;
-  }
-
   const now = Date.now();
-  state.elapsedBefore = computeElapsedMs(now);
-  state.startTs = null;
+  const elapsed = computeElapsedMs(now);
+
   state.status = "paused";
-  state.softWarned = false;
-  state.softDeadlineTs = 0;
+  state.elapsedBefore = elapsed;
+  state.lastElapsedMs = elapsed;
+  state.startTs = null;
+
+  state.pauseStartedTs = now;
+
   saveState();
   updateUI();
 }
@@ -7078,16 +7130,23 @@ if(state.cutEnabled && state.cutMinutes){
   function resumeQuest(){
   if(state.status !== "paused") return;
 
-  if(!isCurrentTabMasterNow()){
-    showTimerWarn("แท็บนี้ไม่ใช่แท็บหลัก Resume ไม่ได้");
-    return;
+  const now = Date.now();
+  const pausedFor = Math.max(0, now - Number(state.pauseStartedTs || now));
+
+  if(state.cutEnabled && state.targetEndTs){
+    state.targetEndTs += pausedFor;
+
+    if(state.cutMode === "soft" && state.softWarned && state.softDeadlineTs){
+      state.softDeadlineTs += pausedFor;
+    }
   }
 
-  state.status="running";
-  state.startTs=Date.now();
-  state.softWarned = false;
-  state.softDeadlineTs = 0;
+  state.status = "running";
+  state.startTs = now;
+  state.pauseStartedTs = 0;
+
   saveState();
+  if(!tickHandle) startTick();
   updateUI();
 }
 
@@ -7928,8 +7987,26 @@ document.addEventListener("visibilitychange", ()=>{
     return;
   }
 
+  // 🔥 สำคัญ: ตัดเวลาให้ตรงก่อน
   checkAutoStop();
 
+  // 🔥 สำคัญ: เอา master tab + restart tick กลับมา
+  if(state.status === "running" || state.status === "paused"){
+    const ok = acquireMasterTab();
+
+    if(ok){
+      writeMasterTab();
+      isMasterTab = true;
+
+      if(!tickHandle) startTick();
+    }else{
+      if(tickHandle) clearInterval(tickHandle);
+      tickHandle = null;
+      showTimerWarn("ตรวจพบแท็บหลักอีกอัน แท็บนี้หยุดการนับเวลา");
+    }
+  }
+
+  // UI + systems
   syncGateRuntimeFromCfg();
   gateMaybeLock();
   gateCheckFirstQuestQualify();
@@ -8077,24 +8154,6 @@ on(el.diceBtn, "click", ()=>{
   }
 });
 /* ===== Draft autosave (mobile safe) ===== */
-
-document.addEventListener("visibilitychange", ()=>{
-  if(document.hidden){
-    if(state.status === "stopped"){
-      saveReportDraft();
-    }
-    return;
-  }
-
-  acquireMasterTab();
-
-  if(state.status === "running" || state.status === "paused"){
-    if(!tickHandle) startTick();
-  }
-
-  checkAutoStop();
-  updateUI();
-});
 
 window.addEventListener("focus", ()=>{
   acquireMasterTab();
