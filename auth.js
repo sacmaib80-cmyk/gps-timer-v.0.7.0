@@ -25,6 +25,8 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 
+let currentUser = null;
+
 function getEls() {
   return {
     googleLoginBtn: document.getElementById("googleLoginBtn"),
@@ -34,6 +36,15 @@ function getEls() {
     userName: document.getElementById("userName"),
     userEmail: document.getElementById("userEmail"),
     authGateLoginBtn: document.getElementById("authGateLoginBtn")
+  };
+}
+
+function syncAuthToWindow() {
+  window.sqAuth = {
+    user: currentUser,
+    uid: currentUser?.uid || null,
+    email: currentUser?.email || null,
+    name: currentUser?.displayName || null
   };
 }
 
@@ -47,6 +58,9 @@ function renderSignedOut() {
   if (el.userPhoto) el.userPhoto.src = "";
   if (el.userName) el.userName.textContent = "Guest";
   if (el.userEmail) el.userEmail.textContent = "";
+
+  const sub = document.getElementById("accountSubText");
+  if (sub) sub.textContent = "Continue with Google";
 }
 
 function renderSignedIn(user) {
@@ -59,6 +73,9 @@ function renderSignedIn(user) {
   if (el.userPhoto) el.userPhoto.src = user.photoURL || "";
   if (el.userName) el.userName.textContent = user.displayName || "No name";
   if (el.userEmail) el.userEmail.textContent = user.email || "";
+
+  const sub = document.getElementById("accountSubText");
+  if (sub) sub.textContent = user.displayName || "Logged in";
 }
 
 async function loginWithGoogle() {
@@ -78,7 +95,7 @@ async function loginWithGoogle() {
       return;
     }
 
-    alert(error.code);
+    alert(error.code || "Login failed");
   }
 }
 
@@ -87,11 +104,15 @@ async function logoutNow() {
     await signOut(auth);
   } catch (error) {
     console.error("Logout error:", error);
+    alert("Logout failed");
   }
 }
 
 onAuthStateChanged(auth, (user) => {
   console.log("Auth state:", user);
+
+  currentUser = user || null;
+  syncAuthToWindow();
 
   if (user) {
     renderSignedIn(user);
@@ -99,21 +120,32 @@ onAuthStateChanged(auth, (user) => {
     renderSignedOut();
   }
 
-  // 👉 ปลดล็อกหน้าจอ
   const gate = document.getElementById("authGate");
   if (gate) {
     gate.style.display = user ? "none" : "flex";
+    gate.setAttribute("aria-hidden", user ? "true" : "false");
   }
+
+  if (typeof window.checkAuthGate === "function") {
+    window.checkAuthGate();
+  }
+
+  window.dispatchEvent(new CustomEvent("sq-auth-changed", {
+    detail: window.sqAuth
+  }));
+
+  window.dispatchEvent(new Event("sq-user-changed"));
 });
 
-
-// ✅ FIX สำคัญสุด: ใช้ delegation (ไม่พังอีก)
 document.addEventListener("click", (e) => {
   if (e.target.closest("#authGateLoginBtn, #googleLoginBtn")) {
+    e.preventDefault();
     loginWithGoogle();
+    return;
   }
 
   if (e.target.closest("#logoutBtn")) {
+    e.preventDefault();
     logoutNow();
   }
 });
