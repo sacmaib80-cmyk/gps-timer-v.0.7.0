@@ -6853,6 +6853,7 @@ const SQ_DICE_GEN = {
 };
 
 function rqPickOne(arr){
+  if(!Array.isArray(arr) || arr.length === 0) return null;
   return arr[Math.floor(Math.random() * arr.length)];
 }
 function rqHash(str){
@@ -7087,24 +7088,30 @@ function rqPickTopDomainAntiStreak(domains, category){
 
 /* ---------- 7d stats ---------- */
 function rqBuild7dStats(){
-  const data = loadAll();
+  const all = loadAll();
   const today = localDateKey();
   const cats = ["Learning","Work/Project","Physical","Connection"];
   const stat = {};
-  cats.forEach(c=> stat[c] = { minutes:0, count:0 });
 
-  for(let i=0;i<7;i++){
-    const all = loadAll();
+  cats.forEach(c => {
+    stat[c] = { minutes: 0, count: 0 };
+  });
+
+  for(let i = 0; i < 7; i++){
+    const dk = addDays(today, -i);
     const day = all.days?.[dk];
     if(!day?.quests) continue;
+
     for(const q of day.quests){
       if(!stat[q.category]) continue;
       stat[q.category].minutes += Number(q.minutesSpent || 0);
       stat[q.category].count += 1;
     }
   }
+
   return stat;
 }
+
 function rqGetForcedCategoryByDeficit(){
   const stats7 = rqBuild7dStats();
 
@@ -7116,32 +7123,24 @@ function rqGetForcedCategoryByDeficit(){
 
   return "";
 }
+
 function rqBuildRecentCategoryStats(days = 2){
-  const data = loadAll();
+  const all = loadAll();
   const today = localDateKey();
   const stat = new Map();
 
-  for(let i=1;i<=days;i++){
-    const all = loadAll();
-const day = all.days?.[dk];
+  for(let i = 1; i <= days; i++){
+    const dk = addDays(today, -i);
+    const day = all.days?.[dk];
     if(!day?.quests) continue;
+
     for(const q of day.quests){
       const c = q.category;
       stat.set(c, (stat.get(c) || 0) + 1);
     }
   }
+
   return stat;
-}
-function rqWeightedPick(items){
-  const valid = items.filter(x => x.weight > 0);
-  if(!valid.length) return null;
-  const sum = valid.reduce((a,x)=> a + x.weight, 0);
-  let r = Math.random() * sum;
-  for(const item of valid){
-    r -= item.weight;
-    if(r <= 0) return item.value;
-  }
-  return valid[0].value;
 }
 
 /* ---------- physical parsing ---------- */
@@ -7155,30 +7154,36 @@ function rqGetPhysicalBodyPartFromName(name){
     ["ขา", "ขา"],
     ["ท้อง", "ท้อง"]
   ];
+
   for(const [kw, part] of map){
     if(txt.includes(kw)) return part;
   }
+
   return "";
 }
+
 function rqQuestIsPhysicalCardioName(name){
   const txt = String(name || "").toLowerCase();
   return ["เดิน","วิ่ง","mobility","ยืดเหยียด","คาร์ดิโอ"].some(k => txt.includes(k.toLowerCase()));
 }
+
 function rqGetRecentPhysicalParts(days = SQ_DICE_RULES.physicalCooldownDays){
-  const data = loadAll();
+  const all = loadAll();
   const today = localDateKey();
   const used = new Set();
 
-  for(let i=1;i<=days;i++){
-    const all = loadAll();
-const day = all.days?.[dk];
+  for(let i = 1; i <= days; i++){
+    const dk = addDays(today, -i);
+    const day = all.days?.[dk];
     if(!day?.quests) continue;
+
     for(const q of day.quests){
       if(q.category !== "Physical") continue;
       const part = rqGetPhysicalBodyPartFromName(q.questName || q.name || "");
       if(part) used.add(part);
     }
   }
+
   return used;
 }
 
@@ -7392,25 +7397,31 @@ function rqPick(energy){
   const category = rqChooseCategorySmart(energy);
 
   if(!category){
-    return { ok:false, reason:"NO_ALLOWED_CATEGORY" };
+    const fb = rqBuildQuestByCategory("Learning", energy || "low");
+    return fb ? { ok:true, quest:fb } : { ok:false, reason:"NO_ALLOWED_CATEGORY" };
   }
 
-  for(let i=0;i<12;i++){
+  for(let i = 0; i < 12; i++){
     const q = rqBuildQuestByCategory(category, energy);
     if(rqValidateQuestCandidate(q, done)){
       return { ok:true, quest:q };
     }
   }
 
-  /* fallback to other allowed categories */
   const allowed = rqGetAllowedCategories(energy).filter(c => c !== category);
+
   for(const alt of allowed){
-    for(let i=0;i<8;i++){
+    for(let i = 0; i < 8; i++){
       const q = rqBuildQuestByCategory(alt, energy);
       if(rqValidateQuestCandidate(q, done)){
         return { ok:true, quest:q };
       }
     }
+  }
+
+  const emergency = rqBuildQuestByCategory("Learning", energy || "low");
+  if(emergency){
+    return { ok:true, quest:emergency };
   }
 
   return { ok:false, reason:"NO_CANDIDATES" };
@@ -7610,8 +7621,17 @@ function rqHandleRandom(energy){
   el.diceBtn?.classList.add("rqSpin");
   setTimeout(()=> el.diceBtn?.classList.remove("rqSpin"), 560);
 
-  const res = rqPick(energy);
-  if(!res.ok){
+  let res = null;
+
+  try{
+    res = rqPick(energy);
+  }catch(err){
+    console.error("[RQ] rqPick crashed:", err);
+    showTimerWarn("Random Quest พังที่ logic");
+    return;
+  }
+
+  if(!res || !res.ok || !res.quest){
     showTimerWarn("วันนี้สุ่มไม่เจอเควสที่สมเหตุสมผลแล้ว");
     return;
   }
