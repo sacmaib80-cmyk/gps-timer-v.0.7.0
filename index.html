@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>SakuraQ v0.10.3</title>
+    <title>SakuraQ v0.10.4</title>
 
     <style>
       :root{
@@ -4096,7 +4096,7 @@ linear-gradient(
                   <div class="brandMeta">
                     <div class="brandTitleRow">
                       <h1>SakuraQ</h1>
-                      <span class="versionBadge">v0.10.3</span>
+                      <span class="versionBadge">v0.10.4</span>
                     </div>
                     <div class="sub" id="todayText">Today: ----</div>
                   </div>
@@ -4317,6 +4317,37 @@ linear-gradient(
               <textarea id="notes" placeholder="ทำอะไร/ได้ insight อะไร/เปลี่ยนพฤติกรรมไหม"></textarea>
               <div class="draftHint" id="draftHint" style="display:none;">Draft saved automatically</div>
             </div>
+
+            
+
+            <div class="divider"></div>
+            
+            <button type="button" id="toggleMethodChangeBtn" class="secondary smallBtn">
+  + เพิ่ม Method Change (+4)
+</button>
+
+<div id="methodChangeWrap" hidden>
+  <div class="divider"></div>
+
+  <div class="row">
+    <div>
+      <label for="insightWhy">Why / ทำไมถึงคิดแบบนี้</label>
+      <textarea id="insightWhy" placeholder="เช่น เพราะวิธีเดิมทำให้เริ่มช้า หรือหลุดโฟกัสง่าย"></textarea>
+    </div>
+  </div>
+
+  <div class="row two">
+    <div>
+      <label for="insightFrom">From / พฤติกรรมเดิม</label>
+      <textarea id="insightFrom" placeholder="เช่น เปิดแอปแล้วไหลไปเรื่อย"></textarea>
+    </div>
+    <div>
+      <label for="insightTo">To / พฤติกรรมใหม่</label>
+      <textarea id="insightTo" placeholder="เช่น เปิดแอปแล้วกดเริ่มเควสใน 1 นาที"></textarea>
+    </div>
+  </div>
+</div>
+
 
             <div class="btns" style="margin-top:12px;">
               <button id="submitReportBtn" type="button">Submit</button>
@@ -5145,6 +5176,52 @@ function calcInsightBonusV1({ minutes, note }){
   return 2;
 }
 
+function isLowQualityInsightText(text){
+  const t = String(text || "").trim();
+
+  if(!t) return true;
+
+  // ตัวอักษรซ้ำยาว ๆ เช่น 555555555 / aaaaaaa
+  if(/(.)\1{5,}/.test(t)) return true;
+
+  // คำเดิมซ้ำติดกัน เช่น ดี ดี ดี / work work work
+  if(/(\b\S+\b)(\s+\1){2,}/i.test(t)) return true;
+
+  return false;
+} 
+
+function calcInsightBonusV2({
+  minutes,
+  note,
+  why,
+  fromBehavior,
+  toBehavior
+}){
+  const text = String(note || "").trim();
+  const whyText = String(why || "").trim();
+  const fromText = String(fromBehavior || "").trim();
+  const toText = String(toBehavior || "").trim();
+
+  if(minutes < 25) return 0;
+
+  const passPlus2 =
+    text.length >= 20 &&
+    !isLowQualityInsightText(text);
+
+  const passPlus4 =
+  passPlus2 &&
+  whyText.length >= 12 &&
+  fromText.length >= 8 &&
+  toText.length >= 8 &&
+  !isLowQualityInsightText(whyText) &&
+  !isLowQualityInsightText(fromText) &&
+  !isLowQualityInsightText(toText);
+
+  if(passPlus4) return 4;
+  if(passPlus2) return 2;
+  return 0;
+}
+
 
   /* =========================
     DATA LAYER
@@ -5659,6 +5736,11 @@ homeUserSub: $("homeUserSub"),
     reportMinutes: $("reportMinutes"),
     qualityBonus: $("qualityBonus"),
     notes: $("notes"),
+toggleMethodChangeBtn: $("toggleMethodChangeBtn"),
+methodChangeWrap: $("methodChangeWrap"),
+insightWhy: $("insightWhy"),
+insightFrom: $("insightFrom"),
+insightTo: $("insightTo"),
     draftHint: $("draftHint"),
     bonusRuleHint: $("bonusRuleHint"),
     capHint: $("capHint"),
@@ -8058,6 +8140,9 @@ saveState();
   clearSubmitMessages();
   setReportVisible(true);
 
+  setMethodChangeOpen(false);
+refreshInsightHint();
+
   saveReportDraft();
 
   updateUI();
@@ -8120,9 +8205,12 @@ if(minutes < RULES.bonusMinMinutes && el.qualityBonus){
   el.qualityBonus.value = "0";
 }
 
-const bonus = calcInsightBonusV1({
+const bonus = calcInsightBonusV2({
   minutes,
-  note: el.notes?.value
+  note: el.notes?.value || "",
+  why: el.insightWhy?.value || "",
+  fromBehavior: el.insightFrom?.value || "",
+  toBehavior: el.insightTo?.value || ""
 });
 const questScore = baseScore + bonus;
 
@@ -8575,10 +8663,62 @@ function hideTooltip(){
    REPORT DRAFT SYSTEM
 ========================= */
 
+function setMethodChangeOpen(open){
+  if(!el.methodChangeWrap || !el.toggleMethodChangeBtn) return;
+
+  if(open){
+    el.methodChangeWrap.removeAttribute("hidden");
+    el.toggleMethodChangeBtn.textContent = "− ซ่อน Method Change (+4)";
+  }else{
+    el.methodChangeWrap.setAttribute("hidden", "");
+    el.toggleMethodChangeBtn.textContent = "+ เพิ่ม Method Change (+4)";
+  }
+}
+
+function toggleMethodChange(){
+  if(!el.methodChangeWrap) return;
+  const isHidden = el.methodChangeWrap.hasAttribute("hidden");
+  setMethodChangeOpen(isHidden);
+}
+
+function refreshInsightHint(){
+  const minutes = Math.max(0, Math.round((state.lastElapsedMs || 0) / 60000));
+
+  const bonus = calcInsightBonusV2({
+    minutes,
+    note: el.notes?.value || "",
+    why: el.insightWhy?.value || "",
+    fromBehavior: el.insightFrom?.value || "",
+    toBehavior: el.insightTo?.value || ""
+  });
+
+  if(!el.bonusRuleHint) return;
+
+  if(minutes < 25){
+    el.bonusRuleHint.textContent = "Insight Bonus: ต้องทำอย่างน้อย 25 นาที";
+    return;
+  }
+
+  if(bonus >= 4){
+    el.bonusRuleHint.textContent = "Insight Bonus: พร้อมได้ +4";
+    return;
+  }
+
+  if(bonus >= 2){
+    el.bonusRuleHint.textContent = "Insight Bonus: พร้อมได้ +2";
+    return;
+  }
+
+  el.bonusRuleHint.textContent = "Insight Bonus: เขียน insight ให้ชัดกว่านี้";
+}
+
 function saveReportDraft(){
  const draft = {
   bonus: el.qualityBonus?.value || "0",
-  notes: el.notes?.value || ""
+  notes: el.notes?.value || "",
+  insightWhy: el.insightWhy?.value || "",
+  insightFrom: el.insightFrom?.value || "",
+  insightTo: el.insightTo?.value || ""
 };
 
 localStorage.setItem(makeScopedKey(REPORT_DRAFT_KEY), JSON.stringify(draft));
@@ -8599,6 +8739,10 @@ const raw = localStorage.getItem(makeScopedKey(REPORT_DRAFT_KEY));
     if(lockedMinutes < RULES.bonusMinMinutes && el.qualityBonus){
       el.qualityBonus.value = "0";
     }
+
+    setMethodChangeOpen(false);
+refreshInsightHint();
+
     return;
   }
 
@@ -8611,6 +8755,16 @@ const raw = localStorage.getItem(makeScopedKey(REPORT_DRAFT_KEY));
 
     // ใส่ notes draft ได้ปกติ
     if(el.notes) el.notes.value = d.notes || "";
+
+    if(el.insightWhy) el.insightWhy.value = d.insightWhy || "";
+if(el.insightFrom) el.insightFrom.value = d.insightFrom || "";
+if(el.insightTo) el.insightTo.value = d.insightTo || "";
+
+const hasMethodChangeDraft =
+  !!(d.insightWhy || d.insightFrom || d.insightTo);
+
+setMethodChangeOpen(hasMethodChangeDraft);
+refreshInsightHint();
 
     // ใช้เวลาจริงตัดสินโบนัส ไม่ใช้ d.minutes
     applyBonusRule(lockedMinutes);
@@ -8642,7 +8796,28 @@ const raw = localStorage.getItem(makeScopedKey(REPORT_DRAFT_KEY));
     if(lockedMinutes < RULES.bonusMinMinutes && el.qualityBonus){
       el.qualityBonus.value = "0";
     }
+
+    setMethodChangeOpen(false);
+refreshInsightHint();
   }
+}
+
+function setMethodChangeOpen(open){
+  if(!el.methodChangeWrap || !el.toggleMethodChangeBtn) return;
+
+  if(open){
+    el.methodChangeWrap.removeAttribute("hidden");
+    el.toggleMethodChangeBtn.textContent = "− ซ่อน Method Change (+4)";
+  }else{
+    el.methodChangeWrap.setAttribute("hidden", "");
+    el.toggleMethodChangeBtn.textContent = "+ เพิ่ม Method Change (+4)";
+  }
+}
+
+function toggleMethodChange(){
+  if(!el.methodChangeWrap) return;
+  const isHidden = el.methodChangeWrap.hasAttribute("hidden");
+  setMethodChangeOpen(isHidden);
 }
 
 function clearReportDraft(){
@@ -8703,9 +8878,29 @@ if(!Number.isFinite(minutes) || minutes <= 0){
   on(el.submitReportBtn, "click", submitReport);
   on(el.discardBtn, "click", discardReport);
 
-  on(el.reportMinutes, "input", saveReportDraft);
+  on(el.toggleMethodChangeBtn, "click", toggleMethodChange);
+
+on(el.reportMinutes, "input", saveReportDraft);
 on(el.qualityBonus, "change", saveReportDraft);
-on(el.notes, "input", saveReportDraft);
+on(el.notes, "input", ()=>{
+  saveReportDraft();
+  refreshInsightHint();
+});
+
+on(el.insightWhy, "input", ()=>{
+  saveReportDraft();
+  refreshInsightHint();
+});
+
+on(el.insightFrom, "input", ()=>{
+  saveReportDraft();
+  refreshInsightHint();
+});
+
+on(el.insightTo, "input", ()=>{
+  saveReportDraft();
+  refreshInsightHint();
+});
 
   // inputs
   on(el.category, "change", ()=>{
