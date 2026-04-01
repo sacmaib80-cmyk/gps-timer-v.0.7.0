@@ -5309,7 +5309,7 @@ function canClaimPlus6({
   const srcQuest = found.quest;
 
   if(!srcQuest) return { ok:false, reason:"key_not_found" };
-  if(Number(srcQuest.bonus || 0) < 4) return { ok:false, reason:"not_plus4_source" };
+  if(Number(srcQuest.qualityBonus || 0) < 4) return { ok:false, reason:"not_plus4_source" };
   if(srcQuest.claimResolved) return { ok:false, reason:"already_used" };
 
   const sameQuest =
@@ -8386,6 +8386,7 @@ clearReportFormFields();
     if(plus6Check.ok && plus6Check.sourceQuest){
   plus6Check.sourceQuest.claimResolved = true;
   plus6Check.sourceQuest.claimResolvedAt = dateKey;
+  saveAll(all);
 }
 
     updateStreakAfterChange();
