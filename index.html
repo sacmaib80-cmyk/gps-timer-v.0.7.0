@@ -11599,14 +11599,6 @@ function seedDefaultQuestSuggestions(){
   const wasSeeded = localStorage.getItem(seededKey) === "1";
   if(wasSeeded) return;
 
-  const now = Date.now();
-  questSuggestions = [
-    { name: "Main Quest", count: 8, lastUsed: now },
-    { name: "English 30", count: 5, lastUsed: now - 1000 },
-    { name: "Workout", count: 4, lastUsed: now - 2000 },
-    { name: "Coding Fix", count: 3, lastUsed: now - 3000 },
-  ];
-
   saveQuestSuggestions();
   localStorage.setItem(seededKey, "1");
 }
