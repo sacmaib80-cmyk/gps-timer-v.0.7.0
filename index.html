@@ -6279,6 +6279,8 @@ function saveGateCfg(){
     unlocked: false,
     unlockReason: "",
     passed: false,
+    startedInTime: false,
+awaitingGateResult: false,
 
     firstQuestStartAt: 0,
     bonusGranted: false,
@@ -6298,9 +6300,12 @@ function saveGate(){
     gate.unlocked = false;
     gate.unlockReason = "";
     gate.passed = false;
+    gate.startedInTime = false;
+gate.awaitingGateResult = false;
     gate.firstQuestStartAt = 0;
     gate.bonusGranted = false;
     gate.doneBannerUntil = 0;
+    
 
     if(force) saveGate();
   }
@@ -6329,16 +6334,18 @@ const raw = localStorage.getItem(makeScopedKey(KEY_GATE));
   gate.triggerHHMM = gateCfg.triggerHHMM || null;
 
   if(!gate.enabled){
-    gate.startedAt = 0;
-    gate.locked = false;
-    gate.unlocked = false;
-    gate.unlockReason = "";
-    gate.passed = false;
-    gate.firstQuestStartAt = 0;
-    gate.doneBannerUntil = 0;
-    saveGate();
-    return;
-  }
+  gate.startedAt = 0;
+  gate.locked = false;
+  gate.unlocked = false;
+  gate.unlockReason = "";
+  gate.passed = false;
+  gate.startedInTime = false;
+  gate.awaitingGateResult = false;
+  gate.firstQuestStartAt = 0;
+  gate.doneBannerUntil = 0;
+  saveGate();
+  return;
+}
 
   if(hasQuestAfterTodayTrigger()){
     gate.passed = true;
@@ -6358,11 +6365,22 @@ const raw = localStorage.getItem(makeScopedKey(KEY_GATE));
     return now >= start;
   }
   function gateTimeLeftSec(){
-    if(!gate.startedAt) return 0;
-    const end = gate.startedAt + GATE_RULES.limitMin * 60000;
-    const ms = end - Date.now();
-    return Math.max(0, Math.ceil(ms/1000));
+  const deadline = gateWorldDeadlineTs();
+  if(!deadline) return 0;
+
+  const ms = deadline - Date.now();
+
+  // ถ้าเคยเริ่มเควสทันแล้ว และตอนนี้รอผล submit/discard
+  // ให้ค้างที่ 00:00 ไม่ใช่ติดลบ
+  if(ms <= 0){
+    if(gate.startedInTime || gate.awaitingGateResult){
+      return 0;
+    }
+    return 0;
   }
+
+  return Math.max(0, Math.ceil(ms / 1000));
+}
 
   /* cover/topbar show/hide */
   function showGateCover(){
@@ -6390,34 +6408,59 @@ const raw = localStorage.getItem(makeScopedKey(KEY_GATE));
   }
 
   function gateMaybeLock(){
-    if(!isGateActiveToday()) return;
-    if(gate.passed || hasQuestAfterTodayTrigger()) return;
-    if(!gateIsWorldActiveNow()) return;
+  if(!isGateActiveToday()) return;
+  if(gate.passed || hasQuestAfterTodayTrigger()) return;
+  if(!gateIsWorldActiveNow()) return;
 
-    const now = Date.now();
-    const deadline = gateWorldDeadlineTs();
+  const now = Date.now();
+  const deadline = gateWorldDeadlineTs();
 
-    if(deadline && now > deadline){
-      gate.locked = true;
-      if(!gate.startedAt) gate.startedAt = gateWorldStartTs();
-      saveGate();
-      return;
-    }
+  if(!deadline) return;
 
-    if(!gate.startedAt) return;
-    if(gateTimeLeftSec() <= 0){
-      gate.locked = true;
+  // ยังไม่ถึง deadline
+  if(now <= deadline){
+    if(gate.locked){
+      gate.locked = false;
       saveGate();
     }
+    return;
   }
+
+  // เลย deadline แล้ว
+
+  // ถ้ายังไม่เคยเริ่มเควสทัน -> lock/fail ได้เลย
+  if(!gate.startedInTime){
+    gate.locked = true;
+    gate.awaitingGateResult = false;
+    if(!gate.startedAt) gate.startedAt = gateWorldStartTs();
+    saveGate();
+    return;
+  }
+
+  // ถ้าเริ่มเควสทันแล้ว -> ยังไม่ lock
+  // รอผล submit/discard แม้เวลาจะเหลือ 00:00
+  gate.locked = false;
+  gate.awaitingGateResult = true;
+  saveGate();
+}
   function gateCanStartQuest(){
-    if(!isGateActiveToday()) return true;
-    if(gate.passed ||hasQuestAfterTodayTrigger()) return true;
-    if(!gateIsWorldActiveNow()) return true;
-    if(!gate.startedAt) return false;
-    if(gate.locked && !gate.unlocked) return false;
-    return true;
+  if(!isGateActiveToday()) return true;
+  if(gate.passed || hasQuestAfterTodayTrigger()) return true;
+  if(!gateIsWorldActiveNow()) return true;
+
+  const now = Date.now();
+  const deadline = gateWorldDeadlineTs();
+
+  // เลย deadline แล้ว ห้ามเริ่มเควสใหม่
+  if(deadline && now > deadline){
+    return false;
   }
+
+  if(gate.locked && !gate.unlocked) return false;
+
+  // ก่อน deadline ยังเริ่มได้
+  return true;
+}
   function gateEnforceStartButton(){
     if(!el.startBtn) return;
     if(state.status !== "idle"){
@@ -8270,10 +8313,26 @@ if(
   isGateActiveToday() &&
   gateIsWorldActiveNow() &&
   !gate.passed &&
-  !hasQuestAfterTodayTrigger() &&
-  !gate.firstQuestStartAt
+  !hasQuestAfterTodayTrigger()
 ){
-  gate.firstQuestStartAt = Date.now();
+  const now = Date.now();
+  const deadline = gateWorldDeadlineTs();
+
+  if(!gate.firstQuestStartAt){
+    gate.firstQuestStartAt = now;
+  }
+
+  // เริ่มทัน deadline จริง
+  if(deadline && now <= deadline){
+    gate.startedInTime = true;
+    gate.awaitingGateResult = true;
+  }
+
+  // startedAt ยังเก็บไว้ได้ ถ้ามี UI/logic อื่นใช้อยู่
+  if(!gate.startedAt){
+    gate.startedAt = now;
+  }
+
   saveGate();
 }
 }
@@ -8379,6 +8438,18 @@ clearCutDeadline();
   clearSubmitMessages();
   clearReportDraft();
 clearReportFormFields();
+
+if(isGateActiveToday() && gate.awaitingGateResult){
+  gate.passed = false;
+  gate.locked = true;
+  gate.awaitingGateResult = false;
+  saveGate();
+
+  syncGateRuntimeFromCfg();
+  gateEnforceStartButton();
+  renderGateUX();
+}
+
   updateUI();
 
   activeQuest = null;
@@ -8479,6 +8550,32 @@ const day = ensureDay(all.days, dateKey);
     day.quests.push(entry);
 recalcDayTotal(day);
 saveAll(all);
+// ===== Morning Gate result resolve =====
+if(isGateActiveToday() && gate.awaitingGateResult){
+  const minutesSpent = Number(entry.minutesSpent || 0);
+  const passedGate = !!gate.startedInTime && minutesSpent >= GATE_RULES.qualifyMin;
+
+  if(passedGate){
+    gate.passed = true;
+    gate.locked = false;
+    gate.awaitingGateResult = false;
+    saveGate();
+
+    syncGateRuntimeFromCfg();
+    gateEnforceStartButton();
+    renderGateUX();
+  }else{
+    // submit แล้วแต่ไม่ถึงเกณฑ์ = lock
+    gate.passed = false;
+    gate.locked = true;
+    gate.awaitingGateResult = false;
+    saveGate();
+
+    syncGateRuntimeFromCfg();
+    gateEnforceStartButton();
+    renderGateUX();
+  }
+}
 
 // รี sync gate หลัง submit ทันที
 syncGateRuntimeFromCfg();
@@ -9439,7 +9536,7 @@ on(el.claimProof, "input", ()=>{
     if(gateIsWorldActiveNow() && !gate.passed){
       const dl = new Date(gateWorldDeadlineTs());
       const pad2 = n => String(n).padStart(2,"0");
-      showTimerWarn(`Deadline: ${pad2(dl.getHours())}:${pad2(dl.getMinutes())} • PASS ที่ ${GATE_RULES.qualifyMin} นาที`);
+      showTimerWarn(`Deadline: ${pad2(dl.getHours())}:${pad2(dl.getMinutes())} • ต้องเริ่มก่อนหมดเวลา และทำต่อให้ครบ ${GATE_RULES.qualifyMin} นาที`);
     }
   });
 
