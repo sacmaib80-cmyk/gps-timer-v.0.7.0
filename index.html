@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>SakuraQ v0.11.2</title>
+    <title>SakuraQ v0.11.4 debug</title>
 
     <link rel="manifest" href="./manifest.webmanifest">
 
@@ -4154,7 +4154,7 @@ body.hasMultiTabBanner{
                   <div class="brandMeta">
                     <div class="brandTitleRow">
                       <h1>SakuraQ</h1>
-                      <span class="versionBadge">v0.11.2</span>
+                      <span class="versionBadge">v0.11.4</span>
                     </div>
                     <div class="sub" id="todayText">Today: ----</div>
                   </div>
@@ -4975,6 +4975,7 @@ window.sqCloud = { doc, setDoc, getDoc };
 </script>
 
   <script>
+    console.log("TOP SCRIPT RUN");
 /* =========================================================
   QPS Timer v0.6.x — Full JS (Safe/Null-Guard) + Gate Page v2
   - Morning Gate settings removed from Timer Card (no more gateTriggerTimeInput there)
@@ -6232,6 +6233,15 @@ window.addEventListener("sq-user-changed", async () => {
   loadState();
   loadGateCfg();
   loadGate();
+  console.log("[GATE after loadGate]", {
+  locked: gate.locked,
+  unlocked: gate.unlocked,
+  unlockReason: gate.unlockReason,
+  passed: gate.passed,
+  startedInTime: gate.startedInTime,
+  awaitingGateResult: gate.awaitingGateResult,
+  startedAt: gate.startedAt
+});
   syncGateRuntimeFromCfg();
   loadQuestSuggestions();
   loadReportDraft();
@@ -6377,9 +6387,25 @@ awaitingGateResult: false,
     doneBannerUntil: 0
   };
 
+  console.log("[GATE before save unlock]", {
+  locked: gate.locked,
+  unlocked: gate.unlocked,
+  unlockReason: gate.unlockReason,
+  passed: gate.passed,
+  startedInTime: gate.startedInTime,
+  awaitingGateResult: gate.awaitingGateResult,
+  startedAt: gate.startedAt
+});
+
 function saveGate(){
+//   console.log("[saveGate]", {
+//   gate,
+//   key: typeof makeScopedKey === "function" ? makeScopedKey("gate") : "KEY_GATE"
+// });
   localStorage.setItem(makeScopedKey(KEY_GATE), JSON.stringify(gate));
 }
+
+console.log("[GATE after save unlock]", loadGate ? "saved called" : "saved");
   function gateResetForToday(force=false){
     const today = localDateKey();
     gate.dateKey = today;
@@ -6399,6 +6425,10 @@ gate.awaitingGateResult = false;
     if(force) saveGate();
   }
   function loadGate(){
+    console.log("[loadGate raw]", {
+  key: typeof makeScopedKey === "function" ? makeScopedKey("gate") : "KEY_GATE",
+  raw: localStorage.getItem(typeof makeScopedKey === "function" ? makeScopedKey("gate") : KEY_GATE)
+});
     try{
 const raw = localStorage.getItem(makeScopedKey(KEY_GATE));
       if(raw){
@@ -6423,16 +6453,8 @@ const raw = localStorage.getItem(makeScopedKey(KEY_GATE));
   gate.triggerHHMM = gateCfg.triggerHHMM || null;
 
   if(!gate.enabled){
-  gate.startedAt = 0;
-  gate.locked = false;
-  gate.unlocked = false;
-  gate.unlockReason = "";
-  gate.passed = false;
-  gate.startedInTime = false;
-  gate.awaitingGateResult = false;
-  gate.firstQuestStartAt = 0;
-  gate.doneBannerUntil = 0;
-  saveGate();
+  // อย่ารีเซ็ต day-state ทุกครั้งที่ sync รัน
+  // ไม่งั้น unlock / reason / progress จะหายเพราะ loop หรือ config แกว่งชั่วคราว
   return;
 }
 
@@ -6442,6 +6464,15 @@ const raw = localStorage.getItem(makeScopedKey(KEY_GATE));
     saveGate();
   }
 }
+console.log("[GATE after syncGateRuntimeFromCfg]", {
+  locked: gate.locked,
+  unlocked: gate.unlocked,
+  unlockReason: gate.unlockReason,
+  passed: gate.passed,
+  startedInTime: gate.startedInTime,
+  awaitingGateResult: gate.awaitingGateResult,
+  startedAt: gate.startedAt
+});
   function gateWorldStartTs(){ return todayTriggerTs() || 0; }
   function gateWorldDeadlineTs(){ return todayDeadlineTs() || 0; }
 
@@ -6541,6 +6572,15 @@ const raw = localStorage.getItem(makeScopedKey(KEY_GATE));
   gate.awaitingGateResult = true;
   saveGate();
 }
+console.log("[GATE after gateMaybeLock]", {
+  locked: gate.locked,
+  unlocked: gate.unlocked,
+  unlockReason: gate.unlockReason,
+  passed: gate.passed,
+  startedInTime: gate.startedInTime,
+  awaitingGateResult: gate.awaitingGateResult,
+  startedAt: gate.startedAt
+});
   function gateCanStartQuest(){
   if(!isGateActiveToday()) return true;
   if(gate.passed || hasQuestAfterTodayTrigger()) return true;
