@@ -6506,7 +6506,7 @@ const raw = localStorage.getItem(makeScopedKey(KEY_GATE));
 
   if(!deadline) return;
 
-  // ✅ ถ้าเคย unlock แล้ว ห้าม lock ทับอีก
+  // ✅ ถ้าเคย unlock แล้ว ห้าม lock ทับตอน refresh/reload
   if(gate.unlocked){
     if(gate.locked){
       gate.locked = false;
