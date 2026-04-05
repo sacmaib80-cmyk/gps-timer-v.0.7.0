@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>SakuraQ v0.11.0</title>
+    <title>SakuraQ v0.11.1</title>
 
     <link rel="manifest" href="./manifest.webmanifest">
 
@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="SakuraQ">
 
-<link rel="apple-touch-icon" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./logo-192.png">
 
     <style>
       :root{
@@ -4047,7 +4047,7 @@ body.hasMultiTabBanner{
         <div class="homeHud">
           <div class="homeHudTop">
             <div class="homeAvatar">
-              <img src="logo.png" alt="User avatar">
+              <img src="logo-192.png" alt="User avatar">
             </div>
             
             
@@ -4148,13 +4148,13 @@ body.hasMultiTabBanner{
               <div class="brandBlock">
                 <div class="brandLeft">
                   <div class="appIcon">
-                    <img src="logo.png" alt="EXP logo">
+                    <img src="logo-192.png" alt="EXP logo">
                   </div>
 
                   <div class="brandMeta">
                     <div class="brandTitleRow">
                       <h1>SakuraQ</h1>
-                      <span class="versionBadge">v0.11.0</span>
+                      <span class="versionBadge">v0.11.1</span>
                     </div>
                     <div class="sub" id="todayText">Today: ----</div>
                   </div>
@@ -4786,6 +4786,10 @@ body.hasMultiTabBanner{
   <span class="topMenuItemRight" id="topMenuInstallState">WEB</span>
 </button>
 
+<div id="pwaDebugLine" class="hint" style="margin-top:8px; font-size:11px;">
+  Install: WEB • SW: - • Mode: WEB
+</div>
+
   <!-- ACCOUNT -->
 <button class="topMenuItem" type="button" id="googleLoginBtn">
   <span class="topMenuItemLabel">
@@ -4883,7 +4887,7 @@ body.hasMultiTabBanner{
 <div id="authGate" class="authGate" aria-hidden="false">
   <div class="authCard">
     <div class="authBrand">
-      <img src="logo.png" alt="SakuraQ logo" class="authBrandLogo">
+      <img src="logo-192.png" alt="SakuraQ logo" class="authBrandLogo">
       <div class="authBrandText">
         <div class="authBrandName">SakuraQ</div>
         <div class="authBrandTag">Focus. Track. Grow.</div>
@@ -5933,6 +5937,7 @@ function saveUndo(u){
     topMenuInstallBtn: $("topMenuInstallBtn"),
 topMenuInstallSub: $("topMenuInstallSub"),
 topMenuInstallState: $("topMenuInstallState"),
+pwaDebugLine: $("pwaDebugLine"),
 
 homeStreakMini: $("homeStreakMini"),
     homeLevelFill: $("homeLevelFill"),
@@ -6949,8 +6954,12 @@ function closeTopMenu(){
 }
 
 function isStandaloneMode(){
-  return window.matchMedia("(display-mode: standalone)").matches
-    || window.navigator.standalone === true;
+  return (
+    window.matchMedia("(display-mode: standalone)").matches ||
+    window.matchMedia("(display-mode: fullscreen)").matches ||
+    window.matchMedia("(display-mode: minimal-ui)").matches ||
+    window.navigator.standalone === true
+  );
 }
 
 function toggleTopMenu(){
@@ -6959,15 +6968,58 @@ function toggleTopMenu(){
   else openTopMenu();
 }
 
+function getInstallState(){
+  if(isStandaloneMode()) return "APP";
+  if(deferredInstallPrompt) return "READY";
+  return "WEB";
+}
+
+function getInstallHintText(){
+  const state = getInstallState();
+
+  if(state === "APP"){
+    return "ติดตั้งแล้ว • เปิดแบบแอป";
+  }
+
+  if(state === "READY"){
+    return "กดเพื่อติดตั้ง SakuraQ";
+  }
+
+  const isChrome = /chrome|crios/i.test(navigator.userAgent || "");
+  const isLocalhost = /^(localhost|127\.0\.0\.1)$/i.test(location.hostname || "");
+
+  if(isLocalhost){
+    return "โหมดพัฒนา • บางเครื่องจะยังไม่โชว์ install prompt";
+  }
+
+  if(isChrome){
+    return "เปิดผ่าน Chrome และใช้งานสักพักเพื่อเปิดใช้งานติดตั้ง";
+  }
+
+  return "แนะนำเปิดผ่าน Chrome เพื่อให้ติดตั้งได้ง่ายขึ้น";
+}
+
+function renderPwaDebug(){
+  if(!el.pwaDebugLine) return;
+
+  const installState = getInstallState();
+  const swOk = ("serviceWorker" in navigator) ? "YES" : "NO";
+  const mode = isStandaloneMode() ? "APP" : "WEB";
+
+  el.pwaDebugLine.textContent = `Install: ${installState} • SW: ${swOk} • Mode: ${mode}`;
+}
+
 async function promptInstallApp(){
-  if(isStandaloneMode()){
+  const installState = getInstallState();
+
+  if(installState === "APP"){
     showTimerWarn?.("SakuraQ ถูกเปิดแบบแอปอยู่แล้ว");
     closeTopMenu?.();
     return;
   }
 
-  if(!deferredInstallPrompt){
-    showTimerWarn?.("ยังติดตั้งไม่ได้ตอนนี้ ลองเปิดผ่าน Chrome แล้วรอสักครู่");
+  if(installState !== "READY" || !deferredInstallPrompt){
+    showTimerWarn?.(getInstallHintText());
     closeTopMenu?.();
     return;
   }
@@ -6975,9 +7027,17 @@ async function promptInstallApp(){
   try{
     deferredInstallPrompt.prompt();
     const choice = await deferredInstallPrompt.userChoice;
+
     console.log("[PWA] install choice =", choice?.outcome);
+
+    if(choice?.outcome === "accepted"){
+      showTimerWarn?.("กำลังติดตั้ง SakuraQ...");
+    }else{
+      showTimerWarn?.("ยกเลิกการติดตั้ง");
+    }
   }catch(err){
     console.error("[PWA] install prompt error:", err);
+    showTimerWarn?.("เปิดหน้าต่างติดตั้งไม่สำเร็จ");
   }finally{
     deferredInstallPrompt = null;
     renderTopMenuUI();
@@ -6995,19 +7055,24 @@ function renderTopMenuUI(){
   }
 
   if(el.topMenuInstallState && el.topMenuInstallSub){
-    if(isStandaloneMode()){
-      el.topMenuInstallState.textContent = "APP";
-      el.topMenuInstallState.classList.add("on");
-      el.topMenuInstallSub.textContent = "ติดตั้งแล้ว • เปิดแบบแอป";
-    }else if(deferredInstallPrompt){
-      el.topMenuInstallState.textContent = "READY";
-      el.topMenuInstallState.classList.add("on");
-      el.topMenuInstallSub.textContent = "กดเพื่อติดตั้ง SakuraQ";
-    }else{
-      el.topMenuInstallState.textContent = "WEB";
-      el.topMenuInstallState.classList.remove("on");
-      el.topMenuInstallSub.textContent = "ยังเป็นเว็บอยู่";
-    }
+    const installState = getInstallState();
+
+    el.topMenuInstallState.textContent = installState;
+
+    const isOn = (installState === "APP" || installState === "READY");
+    el.topMenuInstallState.classList.toggle("on", isOn);
+
+    el.topMenuInstallSub.textContent = getInstallHintText();
+  }
+
+  if(el.topMenuInstallBtn){
+    const installState = getInstallState();
+
+    el.topMenuInstallBtn.disabled = (installState === "APP");
+    el.topMenuInstallBtn.setAttribute(
+      "aria-disabled",
+      installState === "APP" ? "true" : "false"
+    );
   }
 }
   /* =========================
@@ -10293,13 +10358,23 @@ function resetNotificationFlags(){
   smartWarnSent = false
 }
 async function registerSW(){
-  if(!("serviceWorker" in navigator)) return;
+  if(!("serviceWorker" in navigator)) {
+    console.log("[PWA] service worker unsupported");
+    return;
+  }
 
   try{
-    await navigator.serviceWorker.register("./sw.js");
-    console.log("SW registered");
+    const reg = await navigator.serviceWorker.register("./sw.js", { scope: "./" });
+    console.log("[PWA] SW registered", reg.scope);
+
+    navigator.serviceWorker.ready.then(() => {
+      console.log("[PWA] SW ready");
+      renderTopMenuUI?.();
+    }).catch((err) => {
+      console.error("[PWA] SW ready error:", err);
+    });
   }catch(err){
-    console.error("SW register failed:", err);
+    console.error("[PWA] SW register error:", err);
   }
 }
 
@@ -11753,13 +11828,29 @@ window.addEventListener("beforeinstallprompt", (e) => {
   deferredInstallPrompt = e;
   renderTopMenuUI();
   console.log("[PWA] install prompt ready");
+
+    renderPwaDebug();
 });
 
 window.addEventListener("appinstalled", () => {
   deferredInstallPrompt = null;
   renderTopMenuUI();
+  showTimerWarn?.("ติดตั้ง SakuraQ สำเร็จ");
   console.log("[PWA] app installed");
 });
+
+window.addEventListener("DOMContentLoaded", () => {
+  renderTopMenuUI();
+});
+
+window.addEventListener("visibilitychange", () => {
+  renderTopMenuUI();
+});
+
+window.matchMedia("(display-mode: standalone)").addEventListener?.("change", () => {
+  renderTopMenuUI();
+});
+
 
   /* =========================
     BOOT
