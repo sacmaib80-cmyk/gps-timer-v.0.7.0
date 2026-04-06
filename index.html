@@ -5014,6 +5014,7 @@ let deferredInstallPrompt = null;
   const KEY_GATE      = "qps_morning_gate_v3";
   const KEY_GATE_CFG  = "qps_morning_gate_cfg_v1";
   const KEY_GATE_PREF_LEGACY = "qps_gate_pref_v1";
+  const KEY_GATE_NOTIFY = "qps_morning_gate_notify_v1";
 
   /* Random Quest */
   const KEY_RQ_DONE_PREFIX = "qps_rq_done_ids_";   // + YYYY-MM-DD
@@ -6397,11 +6398,17 @@ awaitingGateResult: false,
   startedAt: gate.startedAt
 });
 
-function saveGate(){
-//   console.log("[saveGate]", {
-//   gate,
-//   key: typeof makeScopedKey === "function" ? makeScopedKey("gate") : "KEY_GATE"
-// });
+function saveGate(from = "unknown"){
+  console.log("[saveGate]", from, {
+    locked: gate.locked,
+    unlocked: gate.unlocked,
+    unlockReason: gate.unlockReason,
+    passed: gate.passed,
+    startedInTime: gate.startedInTime,
+    awaitingGateResult: gate.awaitingGateResult,
+    startedAt: gate.startedAt
+  });
+
   localStorage.setItem(makeScopedKey(KEY_GATE), JSON.stringify(gate));
 }
 
@@ -6442,26 +6449,21 @@ const raw = localStorage.getItem(makeScopedKey(KEY_GATE));
       gateResetForToday(true);
     }
 
-    if(hasQuestAfterTodayTrigger()){
-  gate.passed = true;
-  gate.locked = false;
-  saveGate();
-}
+    gateApplyQuestTruth();
+saveGate();
   }
+  function gateApplyQuestTruth(){
+  if(hasQuestAfterTodayTrigger()){
+    gate.passed = true;
+    gate.locked = false;
+  }
+}
   function syncGateRuntimeFromCfg(){
   gate.enabled = isGateActiveToday();
   gate.triggerHHMM = gateCfg.triggerHHMM || null;
 
   if(!gate.enabled){
-  // อย่ารีเซ็ต day-state ทุกครั้งที่ sync รัน
-  // ไม่งั้น unlock / reason / progress จะหายเพราะ loop หรือ config แกว่งชั่วคราว
-  return;
-}
-
-  if(hasQuestAfterTodayTrigger()){
-    gate.passed = true;
-    gate.locked = false;
-    saveGate();
+    return;
   }
 }
 console.log("[GATE after syncGateRuntimeFromCfg]", {
@@ -6476,14 +6478,18 @@ console.log("[GATE after syncGateRuntimeFromCfg]", {
   function gateWorldStartTs(){ return todayTriggerTs() || 0; }
   function gateWorldDeadlineTs(){ return todayDeadlineTs() || 0; }
 
-  function gateIsWorldActiveNow(){
-    if(!isGateActiveToday()) return false;
-    if(hasQuestAfterTodayTrigger() || gate.passed) return false;
-    const now = Date.now();
-    const start = gateWorldStartTs();
-    if(!start) return false;
-    return now >= start;
-  }
+function gateIsWorldActiveNow(){
+  if(!isGateActiveToday()) return false;
+  if(hasQuestAfterTodayTrigger() || gate.passed) return false;
+
+  const now = Date.now();
+  const start = gateWorldStartTs();
+  const deadline = gateWorldDeadlineTs();
+
+  if(!start || !deadline) return false;
+
+  return now >= start && now <= deadline;
+}
   function gateTimeLeftSec(){
   const deadline = gateWorldDeadlineTs();
   if(!deadline) return 0;
@@ -6745,7 +6751,7 @@ saveAll(all);
 
     await reg.showNotification("🚨 Morning Gate", {
       body: `ถึงเวลา ${gateCfg.triggerHHMM} แล้ว • เริ่มเควสแรกให้ทัน ${GATE_RULES.qualifyMin} นาที`,
-      icon: "icon-192.png",
+      icon: "./logo-192.png",
       tag: "sakuraq-morning-gate",
       renotify: false,
       data: {
@@ -6770,13 +6776,23 @@ async function maybeSendMorningGateNotification(){
 
   const todayKey = localDateKey();
   const notifyKey = `${todayKey}_${gateCfg.triggerHHMM}`;
+  const scopedNotifyKey = makeScopedKey(KEY_GATE_NOTIFY);
+
+  let savedNotifyKey = "";
+  try{
+    savedNotifyKey = localStorage.getItem(scopedNotifyKey) || "";
+  }catch{}
 
   if(lastGateNotifyKey === notifyKey) return false;
+  if(savedNotifyKey === notifyKey) return false;
 
   const sent = await sendMorningGateNotification();
 
   if(sent){
     lastGateNotifyKey = notifyKey;
+    try{
+      localStorage.setItem(scopedNotifyKey, notifyKey);
+    }catch{}
   }
 
   return sent;
@@ -8688,8 +8704,8 @@ clearCutDeadline();
 clearReportFormFields();
 
 if(isGateActiveToday() && gate.awaitingGateResult){
-  gate.passed = false;
-  gate.locked = true;
+  // ถ้าเริ่มทันแล้ว discard = ยังไม่ตัดสินแพ้
+  // แค่เลิกอยู่ในโหมดรอผล
   gate.awaitingGateResult = false;
   saveGate();
 
@@ -10352,7 +10368,7 @@ async function sendQuestDoneNotification(questSnapshot){
 
     await reg.showNotification(buildNotificationTitle(questSnapshot), {
       body: buildNotificationBody(questSnapshot),
-      icon: "icon-192.png",
+      icon: "./logo-192.png",
       tag: "sakuraq-quest-done",
       renotify: false
     });
@@ -10377,7 +10393,7 @@ function sendSmartWarningNotification(){
 
     const n = new Notification(`${emoji} ${activeQuest.name || "Quest"}`, {
       body: "เหลืออีก 1 นาที",
-      icon: "icon-192.png",
+      icon: "./logo-192.png",
       tag: "sakuraq-quest-smart-warning",
       renotify: false
     })
@@ -10407,12 +10423,42 @@ async function registerSW(){
     const reg = await navigator.serviceWorker.register("./sw.js", { scope: "./" });
     console.log("[PWA] SW registered", reg.scope);
 
+    if(reg.waiting){
+      console.log("[PWA] waiting worker found -> skip");
+      reg.waiting.postMessage({ type: "SKIP_WAITING" });
+    }
+
+    reg.addEventListener("updatefound", () => {
+      const newWorker = reg.installing;
+      if(!newWorker) return;
+
+      console.log("[PWA] updatefound");
+
+      newWorker.addEventListener("statechange", () => {
+        console.log("[PWA] new worker state =", newWorker.state);
+
+        if(newWorker.state === "installed" && navigator.serviceWorker.controller){
+          console.log("[PWA] new version installed -> skip waiting");
+          newWorker.postMessage({ type: "SKIP_WAITING" });
+        }
+      });
+    });
+
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if(refreshing) return;
+      refreshing = true;
+      console.log("[PWA] controller changed -> reload");
+      window.location.reload();
+    });
+
     navigator.serviceWorker.ready.then(() => {
       console.log("[PWA] SW ready");
       renderTopMenuUI?.();
     }).catch((err) => {
       console.error("[PWA] SW ready error:", err);
     });
+
   }catch(err){
     console.error("[PWA] SW register error:", err);
   }
