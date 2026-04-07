@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>SakuraQ v0.11.7 debug</title>
+    <title>SakuraQ v0.11.8 </title>
 
     <link rel="manifest" href="./manifest.webmanifest">
 
@@ -1592,16 +1592,19 @@ button:disabled{
 
   /* modal overlay */
   .rqOverlay{
-    position: fixed;
-    inset: 0;
-    z-index: 10060;
-    display:none;
-    align-items:center;
-    justify-content:center;
-    padding: 16px;
-    background: rgba(2,6,23,.55);
-    backdrop-filter: blur(8px);
-  }
+  position: fixed;
+  inset: 0;
+  z-index: 10060;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(15,23,42,.72);
+}
+
+.rqOverlay.show{
+  display: flex;
+}
   .rqOverlay.show{ display:flex; }
 
   .rqCard{
@@ -2595,7 +2598,6 @@ linear-gradient(
   opacity:1;
   pointer-events:auto;
   position:relative;
-  transform: translateZ(0);
 }
 
 #homeScene.page-active{
@@ -4224,6 +4226,16 @@ textarea {
 *:focus {
   outline: none;
 }
+#appScroll{
+  position: relative;
+}
+button,
+a,
+div,
+span {
+  -webkit-tap-highlight-color: transparent;
+}
+
 </style>
 </head>
 <body>
@@ -4364,7 +4376,16 @@ textarea {
 
   <!-- APP PAGE -->
   <div class="app page" id="appPage">
+
     <div id="appScroll">
+
+      
+    <div class="diceFab" id="diceFab" style="display:none;">
+  <div class="diceCd" id="diceCd">Cooldown: <b>00:00</b></div>
+  <button class="diceBtn dicePulse" id="diceBtn" type="button" aria-label="Random Quest Dice">
+    <span class="diceIcon" aria-hidden="true"></span>
+  </button>
+</div>
       <div class="container">
 
         <div class="topbar">
@@ -4379,7 +4400,7 @@ textarea {
                   <div class="brandMeta">
                     <div class="brandTitleRow">
                       <h1>SakuraQ</h1>
-                      <span class="versionBadge">v0.11.7</span>
+                      <span class="versionBadge">v0.11.8</span>
                     </div>
                     <div class="sub" id="todayText">Today: ----</div>
                   </div>
@@ -4413,12 +4434,7 @@ textarea {
 
           <div class="card">
 
-            <div class="diceFab" id="diceFab" style="display:none;">
-              <div class="diceCd" id="diceCd">Cooldown: <b>00:00</b></div>
-              <button class="diceBtn dicePulse" id="diceBtn" type="button" aria-label="Random Quest Dice">
-                <span class="diceIcon" aria-hidden="true"></span>
-              </button>
-            </div>
+  
 
             <div class="rqOverlay" id="rqOverlay" aria-hidden="true">
               <div class="rqCard" role="dialog" aria-modal="true">
@@ -4756,7 +4772,7 @@ textarea {
       <div class="hpHeroMeta">
 <span class="hpFireInline">
   <span class="sqFire sm" aria-hidden="true"></span>
-<span>Best: <b id="histBestDayHero">84</b></span>
+<span>Best Streak: <b id="histBestStreakHero">0</b></span>
 </span>        <span class="hpMetaDivider">/</span>
        <span>📈 Change <b id="histChangeValue">--</b></span>
         <span class="hpMetaDivider">/</span>
@@ -6344,11 +6360,14 @@ histDayTabs: $("histDayTabs"),
 histProductiveDays: $("histProductiveDays"),
 histDeadDays: $("histDeadDays"),
 histBestStreak: $("histBestStreak"),
+histBestStreakHero: $("histBestStreakHero"),
 
  histTotalQuests: $("histTotalQuests"),
 histMostUsedCategory: $("histMostUsedCategory"),
 histAvgSession: $("histAvgSession"),
-histConsistency: $("histConsistency"),     
+histConsistency: $("histConsistency"),   
+
+app: document.querySelector(".app"),
   };
 
   /* =========================
@@ -10481,13 +10500,12 @@ function saveDicePos(left, top){
 function clampDicePos(left, top){
   if(!el.diceFab) return { left, top };
 
-  const rect = el.diceFab.getBoundingClientRect();
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
+  const fabW = el.diceFab.offsetWidth || 60;
+  const fabH = el.diceFab.offsetHeight || 60;
 
   const pad = 8;
-  const maxLeft = Math.max(pad, vw - rect.width - pad);
-  const maxTop  = Math.max(pad, vh - rect.height - pad);
+  const maxLeft = Math.max(pad, window.innerWidth - fabW - pad);
+  const maxTop  = Math.max(pad, window.innerHeight - fabH - pad);
 
   return {
     left: Math.min(Math.max(left, pad), maxLeft),
@@ -10517,18 +10535,16 @@ function initDiceDrag(){
     applyDicePos(saved.left, saved.top);
   }
 
-  const start = (clientX, clientY) => {
-    const rect = el.diceFab.getBoundingClientRect();
+const start = (clientX, clientY) => {
+  diceDrag.active = true;
+  diceDrag.moved = false;
+  diceDrag.startX = clientX;
+  diceDrag.startY = clientY;
+  diceDrag.originLeft = el.diceFab.offsetLeft;
+  diceDrag.originTop = el.diceFab.offsetTop;
 
-    diceDrag.active = true;
-    diceDrag.moved = false;
-    diceDrag.startX = clientX;
-    diceDrag.startY = clientY;
-    diceDrag.originLeft = rect.left;
-    diceDrag.originTop = rect.top;
-
-    el.diceFab.classList.add("dragging");
-  };
+  el.diceFab.classList.add("dragging");
+};
 
   const move = (clientX, clientY) => {
     if(!diceDrag.active) return;
@@ -11056,6 +11072,7 @@ function renderHistoryPageStub(){
   if(el.histProductiveDays) el.histProductiveDays.textContent = String(extra.productiveDays);
 if(el.histDeadDays) el.histDeadDays.textContent = String(extra.deadDays);
 if(el.histBestStreak) el.histBestStreak.textContent = String(extra.bestStreak);
+if(el.histBestStreakHero) el.histBestStreakHero.textContent = String(extra.bestStreak);
 
   renderHistoryTrendChart();
   renderHistoryAnalytics();
