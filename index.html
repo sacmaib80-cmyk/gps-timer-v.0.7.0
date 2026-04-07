@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>SakuraQ v0.11.4 debug</title>
+    <title>SakuraQ v0.11.5 debug</title>
 
     <link rel="manifest" href="./manifest.webmanifest">
 
@@ -4154,7 +4154,7 @@ body.hasMultiTabBanner{
                   <div class="brandMeta">
                     <div class="brandTitleRow">
                       <h1>SakuraQ</h1>
-                      <span class="versionBadge">v0.11.4</span>
+                      <span class="versionBadge">v0.11.5</span>
                     </div>
                     <div class="sub" id="todayText">Today: ----</div>
                   </div>
@@ -10414,7 +10414,7 @@ function resetNotificationFlags(){
   smartWarnSent = false
 }
 async function registerSW(){
-  if(!("serviceWorker" in navigator)) {
+  if (!("serviceWorker" in navigator)) {
     console.log("[PWA] service worker unsupported");
     return;
   }
@@ -10423,21 +10423,21 @@ async function registerSW(){
     const reg = await navigator.serviceWorker.register("./sw.js", { scope: "./" });
     console.log("[PWA] SW registered", reg.scope);
 
-    if(reg.waiting){
+    if (reg.waiting) {
       console.log("[PWA] waiting worker found -> skip");
       reg.waiting.postMessage({ type: "SKIP_WAITING" });
     }
 
     reg.addEventListener("updatefound", () => {
       const newWorker = reg.installing;
-      if(!newWorker) return;
+      if (!newWorker) return;
 
       console.log("[PWA] updatefound");
 
       newWorker.addEventListener("statechange", () => {
         console.log("[PWA] new worker state =", newWorker.state);
 
-        if(newWorker.state === "installed" && navigator.serviceWorker.controller){
+        if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
           console.log("[PWA] new version installed -> skip waiting");
           newWorker.postMessage({ type: "SKIP_WAITING" });
         }
@@ -10446,7 +10446,7 @@ async function registerSW(){
 
     let refreshing = false;
     navigator.serviceWorker.addEventListener("controllerchange", () => {
-      if(refreshing) return;
+      if (refreshing) return;
       refreshing = true;
       console.log("[PWA] controller changed -> reload");
       window.location.reload();
