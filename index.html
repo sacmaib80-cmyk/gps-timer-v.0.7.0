@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>SakuraQ v0.11.8 </title>
+    <title>SakuraQ v0.12.0 </title>
 
     <link rel="manifest" href="./manifest.webmanifest">
 
@@ -907,6 +907,21 @@ backdrop-filter: blur(12px);
         outline:none;
         font-size: 14px;
       }
+
+      input:disabled,
+select:disabled,
+textarea:disabled{
+  background: rgba(148,163,184,.10);
+  color: #64748b;
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+input[readonly]{
+  background: rgba(148,163,184,.10);
+  color: #64748b;
+  cursor: not-allowed;
+}
       input:focus,select:focus,textarea:focus{
         border-color: rgba(96,165,250,.55);
         box-shadow: 0 0 0 4px var(--focus);
@@ -4400,7 +4415,7 @@ span {
                   <div class="brandMeta">
                     <div class="brandTitleRow">
                       <h1>SakuraQ</h1>
-                      <span class="versionBadge">v0.11.8</span>
+                      <span class="versionBadge">v0.12.0</span>
                     </div>
                     <div class="sub" id="todayText">Today: ----</div>
                   </div>
@@ -4547,6 +4562,8 @@ span {
             <div class="btns" style="margin-top:12px;">
               <button id="startBtn" type="button">Start</button>
               <button id="stopBtn" class="danger" type="button" disabled>Stop</button>
+              <button id="extend5Btn" type="button" class="secondary">+5m</button>
+<button id="extend10Btn" type="button" class="secondary">+10m</button>
               <button id="pauseBtn" class="secondary" type="button" disabled>Pause</button>
               <button id="resumeBtn" class="secondary" type="button" disabled>Resume</button>
             </div>
@@ -6368,6 +6385,9 @@ histAvgSession: $("histAvgSession"),
 histConsistency: $("histConsistency"),   
 
 app: document.querySelector(".app"),
+
+extend5Btn: $("extend5Btn"),
+extend10Btn: $("extend10Btn"),
   };
 
   /* =========================
@@ -7676,16 +7696,107 @@ function showActionLockBar(msg){
     const n = clamp(Math.floor(raw), 1, 360);
     return n;
   }
-  function renderCutUI(){
-    if(!el.cutWrap || !el.cutBody || !el.cutChip) return;
-    el.cutWrap.classList.toggle("open", !!state.cutEnabled);
-    el.cutBody.style.display = state.cutEnabled ? "block" : "none";
-    if(!state.cutEnabled){
-      el.cutChip.textContent = "OFF";
-    }else{
-      el.cutChip.textContent = state.cutMinutes ? `${state.cutMinutes}m` : "ON";
-    }
+  function getQuestBaseMinutesRemainingNow(){
+  const dateKey = state.startDateKey || localDateKey();
+  const qn = normQuestName(state.questName || "");
+  if(!qn) return RULES.baseCapPerQuestNamePerDay;
+
+  const used = calcQuestBaseMinutesUsed(dateKey, qn);
+  return Math.max(0, RULES.baseCapPerQuestNamePerDay - used);
+}
+
+function extendCurrentQuestBy(extraMinutes){
+  if(!(state.status === "running" || state.status === "paused")){
+    showTimerWarn("เพิ่มเวลาได้เฉพาะตอนกำลังทำเควส");
+    return;
   }
+
+  if(!state.cutEnabled){
+    showTimerWarn("ต้องเปิด Cutting Time ก่อน");
+    return;
+  }
+
+  const addMin = Number(extraMinutes || 0);
+  if(!Number.isFinite(addMin) || addMin <= 0){
+    showTimerWarn("เวลาเพิ่มไม่ถูกต้อง");
+    return;
+  }
+
+  const currentCut = Number(state.cutMinutes || 0);
+  const nextCut = Math.max(1, currentCut + addMin);
+
+  state.cutMinutes = nextCut;
+
+  if(state.targetEndTs){
+    state.targetEndTs += addMin * 60000;
+  }
+
+  if(state.cutMode === "soft" && state.softWarned && state.softDeadlineTs){
+    state.softDeadlineTs += addMin * 60000;
+  }
+
+  saveState();
+  renderCutUI();
+  updateUI();
+
+  const elapsedNow = Math.max(
+    0,
+    Math.round(((state.status === "paused") ? state.elapsedBefore : computeElapsedMs()) / 60000)
+  );
+
+    const remainMsAfter = Math.max(0, (state.targetEndTs || 0) - Date.now());
+  const remainMinAfter = Math.ceil(remainMsAfter / 60000);
+
+  if(willReachBaseCap){
+    showTimerWarn(`เพิ่มเวลา +${addMin} นาทีแล้ว • เหลือประมาณ ${remainMinAfter} นาที • แต่ base ของ "${normQuestName(state.questName)}" วันนี้อาจตันที่ ${RULES.baseCapPerQuestNamePerDay} นาที`);
+  }else{
+    showTimerWarn(`เพิ่มเวลา +${addMin} นาทีแล้ว • เหลือประมาณ ${remainMinAfter} นาที`);
+  }
+}
+  function renderCutUI(){
+  if(!el.cutWrap || !el.cutBody || !el.cutChip) return;
+
+  const runningLike = (state.status === "running" || state.status === "paused");
+
+    if(el.cutMinutes){
+    el.cutMinutes.value = state.cutMinutes ? String(state.cutMinutes) : "";
+  }
+
+  if(el.cutMode){
+    el.cutMode.value = state.cutMode || "hard";
+  }
+
+  el.cutWrap.classList.toggle("open", !!state.cutEnabled);
+  el.cutBody.style.display = state.cutEnabled ? "block" : "none";
+
+  if(el.cutMinutes){
+    el.cutMinutes.disabled = runningLike;
+    el.cutMinutes.readOnly = runningLike;
+  }
+
+  if(el.cutMode){
+    el.cutMode.disabled = runningLike;
+  }
+
+  if(el.cutToggleBtn){
+    el.cutToggleBtn.disabled = runningLike;
+  }
+
+  if(!state.cutEnabled){
+    el.cutChip.textContent = "OFF";
+    return;
+  }
+
+  let chipText = state.cutMinutes ? `${state.cutMinutes}m` : "ON";
+
+  if(runningLike && state.targetEndTs){
+    const remainMs = Math.max(0, state.targetEndTs - Date.now());
+    const remainMin = Math.ceil(remainMs / 60000);
+    chipText = `${remainMin}m left`;
+  }
+
+  el.cutChip.textContent = chipText;
+}
 
  function renderControls(){
   console.log("[renderControls] status =", state.status);
@@ -7693,6 +7804,9 @@ function showActionLockBar(msg){
   if(el.stopBtn)   el.stopBtn.disabled   = !(state.status==="running" || state.status==="paused");
   if(el.pauseBtn)  el.pauseBtn.disabled  = state.status !== "running";
   if(el.resumeBtn) el.resumeBtn.disabled = state.status !== "paused";
+  const canExtend = (state.status === "running" || state.status === "paused") && !!state.cutEnabled;
+if(el.extend5Btn) el.extend5Btn.disabled = !canExtend;
+if(el.extend10Btn) el.extend10Btn.disabled = !canExtend;
 
   console.log("[renderControls after]", {
     start: el.startBtn?.disabled,
@@ -8757,6 +8871,7 @@ if(!isCurrentTabMasterNow()){
     }
 
     renderTimer();
+    renderCutUI();
 
     if(state.status === "running" && state.cutEnabled && state.targetEndTs){
   const now = Date.now();
@@ -12402,6 +12517,9 @@ async function finishBootOverlay(){
   startTick();
 
   await finishBootOverlay();
+
+  el.extend5Btn?.addEventListener("click", ()=> extendCurrentQuestBy(5));
+el.extend10Btn?.addEventListener("click", ()=> extendCurrentQuestBy(10));
 }
   boot();
 
