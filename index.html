@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>SakuraQ v0.12.1 </title>
+    <title>SakuraQ v0.12.2 </title>
 
     <link rel="manifest" href="./manifest.webmanifest">
 
@@ -4415,7 +4415,7 @@ span {
                   <div class="brandMeta">
                     <div class="brandTitleRow">
                       <h1>SakuraQ</h1>
-                      <span class="versionBadge">v0.12.1</span>
+                      <span class="versionBadge">v0.12.2</span>
                     </div>
                     <div class="sub" id="todayText">Today: ----</div>
                   </div>
@@ -5233,9 +5233,6 @@ window.sqCloud = { doc, setDoc, getDoc };
 </script>
 
   <script>
-    window.__BUILD_MARKER__ = "split-test-1";
-console.log("[BUILD]", window.__BUILD_MARKER__);
-    console.log("TOP SCRIPT RUN");
 /* =========================================================
   QPS Timer v0.6.x — Full JS (Safe/Null-Guard) + Gate Page v2
   - Morning Gate settings removed from Timer Card (no more gateTriggerTimeInput there)
@@ -5604,7 +5601,7 @@ function hasQuestAfterTodayTrigger(){
 function calcInsightBonusV1({ minutes, note }){
   const text = (note || "").trim();
 
-  if(minutes < 25) return 0;
+  if(minutes < RULES.bonusMinMinutes) return 0;
   if(text.length < 20) return 0;
 
   return 2;
@@ -5637,7 +5634,7 @@ function calcInsightBonusV2({
   const fromText = String(fromBehavior || "").trim();
   const toText = String(toBehavior || "").trim();
 
-  if(minutes < 25) return 0;
+  if(minutes < RULES.bonusMinMinutes) return 0;
 
   const passPlus2 =
     text.length >= 20 &&
@@ -7623,7 +7620,7 @@ function forceAutoStop(){
   saveState();
 
   if(el.reportMinutes) el.reportMinutes.value = String(reportMinutes);
-  applyBonusRule(reportMinutes);
+  applyBonusRule(getCurrentReportFlowMinutes());
 
   updateCapHint(dateKey, state.questName);
 
@@ -9269,20 +9266,6 @@ if(
 
 function splitCurrentQuestSegmentAtCap(){
 
-    console.log("[split] enter", {
-    questName: state.questName,
-    flowBaseName: state.flowBaseName,
-    flowIndex: state.flowIndex,
-    flowChainId: state.flowChainId,
-    startDateKey: state.startDateKey,
-    pendingSegments: state.pendingSegments,
-    cutEnabled: state.cutEnabled,
-    cutMinutes: state.cutMinutes,
-    targetEndTs: state.targetEndTs,
-    lastElapsedMs: state.lastElapsedMs,
-    elapsedBefore: state.elapsedBefore,
-    status: state.status
-  });
   ensureFlowMetaForCurrentQuest();
 
   const currentName = normQuestName(state.questName || "");
@@ -9370,16 +9353,6 @@ function buildPendingSegmentsFromStoppedFlow(totalMinutes){
 
   if(el.questName) el.questName.value = state.questName || "";
 
-  console.log("[buildStoppedFlow] after mutate", {
-  questName: state.questName,
-  flowBaseName: state.flowBaseName,
-  flowIndex: state.flowIndex,
-  pendingSegments: state.pendingSegments,
-  currentName,
-  nextIndex,
-  remainder
-});
-
   return {
     pendingSegments: built,
     currentQuestName: currentName,
@@ -9439,16 +9412,6 @@ function pauseQuest(){
 
   function stopQuest(){
 
-    console.log("[STOPQUEST ENTER]", {
-  status: state.status,
-  startTs: state.startTs,
-  elapsedBefore: state.elapsedBefore,
-  questName: state.questName,
-  flowBaseName: state.flowBaseName,
-  flowIndex: state.flowIndex,
-  pendingSegments: state.pendingSegments
-});
-
   if(!(state.status==="running" || state.status==="paused")) return;
 
  if(!isCurrentTabMasterNow()){
@@ -9467,25 +9430,6 @@ state.flowBaseName = state.flowBaseName || normQuestName(state.questName || "");
 let reportMinutes = minutes;
 let splitInfo = null;
 
-if(minutes > 0){
-  console.log("[STOPQUEST BEFORE HELPER]", {
-    minutes,
-    cap: RULES.baseCapPerQuestNamePerDay,
-    questName: state.questName,
-    flowBaseName: state.flowBaseName,
-    flowIndex: state.flowIndex
-  });
-
-  splitInfo = buildPendingSegmentsFromStoppedFlow(minutes);
-
-  console.log("[STOPQUEST AFTER HELPER]", {
-    splitInfo,
-    questName: state.questName,
-    flowBaseName: state.flowBaseName,
-    flowIndex: state.flowIndex,
-    pendingSegments: state.pendingSegments
-  });
-}
 
 state.status = "stopped";
 state.startTs = null;
@@ -9495,15 +9439,6 @@ if(splitInfo){
   state.lastElapsedMs = splitInfo.currentMinutes * 60000;
   reportMinutes = splitInfo.currentMinutes;
 
-  console.log("[manual-stop] splitInfo", splitInfo);
-
-  console.log("[manual-stop] state after split", {
-  questName: state.questName,
-  flowBaseName: state.flowBaseName,
-  flowIndex: state.flowIndex,
-  pendingSegments: state.pendingSegments,
-  reportMinutes
-});
 }else{
   state.elapsedBefore = elapsed;
   state.lastElapsedMs = elapsed;
@@ -9517,7 +9452,7 @@ questFinished = true;
 saveState();
 
 if(el.reportMinutes) el.reportMinutes.value = String(reportMinutes);
-applyBonusRule(reportMinutes);
+applyBonusRule(getCurrentReportFlowMinutes());
 
 updateCapHint(dateKey, state.questName);
 
@@ -9606,14 +9541,9 @@ const segmentsToSave = [
   }
 ];
 
-console.log("[submit] segmentsToSave =", JSON.parse(JSON.stringify(segmentsToSave)));
-console.log("[submit] state before save", {
-  questName: state.questName,
-  flowBaseName: state.flowBaseName,
-  flowIndex: state.flowIndex,
-  pendingSegments: state.pendingSegments,
-  lastElapsedMs: state.lastElapsedMs
-});
+const flowMinutesForBonus = segmentsToSave.reduce((sum, seg) => {
+  return sum + Math.max(0, Number(seg.minutes || 0));
+}, 0);
 
 let baseMinutesUsed = 0;
 
@@ -9630,12 +9560,12 @@ for(const seg of segmentsToSave){
 
 const baseScore = baseMinutesUsed * RULES.basePerMinute;
 
-if(minutes < RULES.bonusMinMinutes && el.qualityBonus){
+if(flowMinutesForBonus < RULES.bonusMinMinutes && el.qualityBonus){
   el.qualityBonus.value = "0";
 }
 
 const plus4Bonus = calcInsightBonusV2({
-  minutes,
+  minutes: flowMinutesForBonus,
   note: el.notes?.value || "",
   why: el.insightWhy?.value || "",
   fromBehavior: el.insightFrom?.value || "",
@@ -9714,8 +9644,6 @@ for(let i = 0; i < segmentsToSave.length; i++){
     notes: isLastSegment ? mergedNote : ""
   };
 
-console.log("[submit] push segEntry", segEntry);
-
   day.quests.push(segEntry);
   rememberQuestName(segName);
 
@@ -9777,9 +9705,9 @@ clearReportFormFields();
 
     if(el.submitOk){
   el.submitOk.style.display = "block";
-  const capMsg = (totalSavedBaseMinutes < minutes)
-    ? ` (cap: counted ${totalSavedBaseMinutes}/${minutes} min)`
-    : "";
+  const capMsg = (totalSavedBaseMinutes < flowMinutesForBonus)
+  ? ` (cap: counted ${totalSavedBaseMinutes}/${flowMinutesForBonus} min)`
+  : "";
   el.submitOk.textContent = `Saved! +${round1(totalSavedScore).toFixed(1)}${capMsg}`;
 }
     if(generatedClaimKey && el.submitOk){
@@ -10115,7 +10043,7 @@ on($("dataPanel"), "click", (e)=>{
     timer: { title: "Timer", body: "เลือกหมวด + ตั้ง Quest Name แล้วกด Start\nPause/Resume ได้\nStop แล้วค่อย Report" },
     name:  { title: "Quest Name (ห้ามซ้ำ)", body: "ชื่อต้องไม่ซ้ำในวันเดียว\nCap base จะนับตามชื่อเควสนี้ (60 นาที/วัน/ชื่อ)" },
     today: { title: "Today", body: "ดูคะแนนรวมวันนี้ + รายการเควส\nExport/Import ใช้สำรองข้อมูล \nUndo/Redo ใช้แก้ล่าสุดได้ "},
-    report:{ title: "Report", body: "Report จะโผล่เมื่อกด Stop\nMinutes > 0\nBonus ใช้ได้เมื่อเวลา ≥ 25 นาที" },
+    report:{ title: "Report", body: `Report จะโผล่เมื่อกด Stop\nMinutes > 0\nBonus ใช้ได้เมื่อเวลา ≥ ${RULES.bonusMinMinutes} นาที` },
     cut:   { title: "Cutting Time", body: "กด Set Time เพื่อเปิด\nใส่นาที 1–360\nHard: ถึงแล้วหยุดทันที\nSoft: เตือนก่อน 10 วิ แล้วหยุด" },
     gate:  { title: "Morning Gate", body:
   `ตั้งค่าในหน้า Gate (กดปุ่ม Morning Gate ขวาบน)
@@ -10260,18 +10188,29 @@ function toggleClaim(){
   setClaimOpen(isHidden);
 }
 
-function refreshInsightHint(){
-  const minutes = Math.max(0, Math.round((state.lastElapsedMs || 0) / 60000));
-  const dateKey = state.startDateKey || localDateKey();
-  const qn = normQuestName(state.questName || el.questName?.value || "");
+function getCurrentReportFlowMinutes(){
+  const currentMinutes = Math.max(0, Math.round((state.lastElapsedMs || 0) / 60000));
+  const pending = Array.isArray(state.pendingSegments) ? state.pendingSegments : [];
 
-  const plus4Bonus = calcInsightBonusV2({
-    minutes,
-    note: el.notes?.value || "",
-    why: el.insightWhy?.value || "",
-    fromBehavior: el.insightFrom?.value || "",
-    toBehavior: el.insightTo?.value || ""
-  });
+  let total = currentMinutes;
+  for(const seg of pending){
+    total += Math.max(0, Number(seg.minutes || 0));
+  }
+  return total;
+}
+
+function refreshInsightHint(){
+ const minutes = getCurrentReportFlowMinutes();
+const dateKey = state.startDateKey || localDateKey();
+const qn = normQuestName(state.questName || el.questName?.value || "");
+
+const plus4Bonus = calcInsightBonusV2({
+  minutes,
+  note: el.notes?.value || "",
+  why: el.insightWhy?.value || "",
+  fromBehavior: el.insightFrom?.value || "",
+  toBehavior: el.insightTo?.value || ""
+});
 
   const plus6Check = canClaimPlus6({
     claimKey: el.claimKeyInput?.value || "",
@@ -10288,10 +10227,10 @@ if(hasKey){
 
   if(!el.bonusRuleHint) return;
 
-  if(minutes < 25){
-    el.bonusRuleHint.textContent = "Insight Bonus: ต้องทำอย่างน้อย 25 นาที";
-    return;
-  }
+  if(minutes < RULES.bonusMinMinutes){
+  el.bonusRuleHint.textContent = `Insight Bonus: ต้องทำอย่างน้อย ${RULES.bonusMinMinutes} นาที`;
+  return;
+}
 
   if(plus6Check.ok){
     el.bonusRuleHint.textContent = "Insight Bonus: พร้อมได้ +6";
@@ -10334,13 +10273,14 @@ function loadReportDraft(){
 const raw = localStorage.getItem(makeScopedKey(REPORT_DRAFT_KEY));
   if(!raw) {
     const lockedMinutes = Math.max(0, Math.round((state.lastElapsedMs || 0) / 60000));
+const flowMinutes = getCurrentReportFlowMinutes();
 
-    if(el.reportMinutes) el.reportMinutes.value = lockedMinutes ? String(lockedMinutes) : "";
-    applyBonusRule(lockedMinutes);
+if(el.reportMinutes) el.reportMinutes.value = lockedMinutes ? String(lockedMinutes) : "";
+applyBonusRule(flowMinutes);
 
-    if(lockedMinutes < RULES.bonusMinMinutes && el.qualityBonus){
-      el.qualityBonus.value = "0";
-    }
+if(flowMinutes < RULES.bonusMinMinutes && el.qualityBonus){
+  el.qualityBonus.value = "0";
+}
 
     setMethodChangeOpen(false);
 refreshInsightHint();
@@ -10352,8 +10292,14 @@ refreshInsightHint();
     const d = JSON.parse(raw);
 
     const lockedMinutes = Math.max(0, Math.round((state.lastElapsedMs || 0) / 60000));
+const flowMinutes = getCurrentReportFlowMinutes();
 
-    if(el.reportMinutes) el.reportMinutes.value = lockedMinutes ? String(lockedMinutes) : "";
+if(el.reportMinutes) el.reportMinutes.value = lockedMinutes ? String(lockedMinutes) : "";
+applyBonusRule(flowMinutes);
+
+if(flowMinutes < RULES.bonusMinMinutes && el.qualityBonus){
+  el.qualityBonus.value = "0";
+}
 
     // ใส่ notes draft ได้ปกติ
     if(el.notes) el.notes.value = d.notes || "";
@@ -10379,12 +10325,12 @@ refreshInsightHint();
     applyBonusRule(lockedMinutes);
 
     if(el.qualityBonus){
-      if(lockedMinutes < RULES.bonusMinMinutes){
-        el.qualityBonus.value = "0";
-      }else{
-        el.qualityBonus.value = d.bonus || "0";
-      }
-    }
+  if(flowMinutes < RULES.bonusMinMinutes){
+    el.qualityBonus.value = "0";
+  }else{
+    el.qualityBonus.value = d.bonus || "0";
+  }
+}
 
     const dateKey = state.startDateKey || localDateKey();
     const qn = normQuestName(state.questName || el.questName?.value || "");
@@ -10398,13 +10344,14 @@ refreshInsightHint();
 
   }catch(e){
     const lockedMinutes = Math.max(0, Math.round((state.lastElapsedMs || 0) / 60000));
+const flowMinutes = getCurrentReportFlowMinutes();
 
-    if(el.reportMinutes) el.reportMinutes.value = lockedMinutes ? String(lockedMinutes) : "";
-    applyBonusRule(lockedMinutes);
+if(el.reportMinutes) el.reportMinutes.value = lockedMinutes ? String(lockedMinutes) : "";
+applyBonusRule(flowMinutes);
 
-    if(lockedMinutes < RULES.bonusMinMinutes && el.qualityBonus){
-      el.qualityBonus.value = "0";
-    }
+if(flowMinutes < RULES.bonusMinMinutes && el.qualityBonus){
+  el.qualityBonus.value = "0";
+}
 
     setMethodChangeOpen(false);
 refreshInsightHint();
@@ -10531,16 +10478,7 @@ function clearReportFormFields(){
   on(el.homeUserName, "click", editProfileName);
   on(el.homeUserSub, "click", editProfileName);
   on(el.resumeBtn, "click", resumeQuest);
-  on(el.stopBtn, "click", (e)=>{
-  console.log("[STOP BTN CLICK WRAPPER]", {
-    status: state.status,
-    disabled: !!el.stopBtn?.disabled,
-    targetEndTs: state.targetEndTs,
-    cutEnabled: state.cutEnabled,
-    cutMinutes: state.cutMinutes
-  });
-  stopQuest(e);
-});
+  on(el.stopBtn, "click", stopQuest);
  
   // report
   on(el.reportMinutes, "input", ()=>{
@@ -11440,7 +11378,7 @@ window.addEventListener("beforeunload", ()=>{
 });
 
 /* =========================================
-   HISTORY
+   HISTORY MAIN
 ========================================= */
 function getHistoryDaysByRange(range){
   const savedDays = listDays().slice().reverse(); // เก่า -> ใหม่
