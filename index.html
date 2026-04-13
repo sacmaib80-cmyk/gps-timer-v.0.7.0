@@ -5233,6 +5233,37 @@ window.sqCloud = { doc, setDoc, getDoc };
 </script>
 
   <script>
+    const __rawLog = console.log.bind(console);
+const __rawWarn = console.warn.bind(console);
+const __rawError = console.error.bind(console);
+
+function __allowConsole(args){
+  const first = args[0];
+
+  if (typeof first === "string") {
+    return (
+      first.includes("[QUEST-NOTI]") ||
+      first.includes("[RAW-NOTI]") ||
+      first.includes("[NOTI]") ||
+      first.includes("SW notification send error") ||
+      first.includes("Smart warning notification error")
+    );
+  }
+
+  return false;
+}
+
+console.log = (...args) => {
+  if (__allowConsole(args)) __rawLog(...args);
+};
+
+console.warn = (...args) => {
+  if (__allowConsole(args)) __rawWarn(...args);
+};
+
+console.error = (...args) => {
+  if (__allowConsole(args)) __rawError(...args);
+};
 /* =========================================================
   QPS Timer v0.6.x — Full JS (Safe/Null-Guard) + Gate Page v2
   - Morning Gate settings removed from Timer Card (no more gateTriggerTimeInput there)
@@ -7072,7 +7103,7 @@ async function sendMorningGateNotification(){
   if(document.visibilityState === "visible") return false;
 
   try{
-    const reg = await ensureSWReady();
+        const reg = await getNotificationRegistration();
     if(!reg) return false;
 
     await reg.showNotification("🚨 Morning Gate", {
@@ -9167,10 +9198,6 @@ if(!isCurrentTabMasterNow()){
 
   async function startQuest(){
 
-    ensureNotificationPermission().then((perm)=>{
-  console.log("[NOTI] permission =", perm);
-});
-
   if(state.status !== "idle") return;
 
   const okMaster = acquireMasterTab();
@@ -11191,20 +11218,14 @@ async function ensureNotificationPermission(){
   }
 }
 
-async function ensureSWReady(){
+async function getNotificationRegistration(){
   if(!("serviceWorker" in navigator)) return null;
 
   try{
-    const reg = await navigator.serviceWorker.register("/sw.js");
-
-    if(reg.waiting){
-      reg.waiting.postMessage({ type: "SKIP_WAITING" });
-    }
-
-    const readyReg = await navigator.serviceWorker.ready;
-    return readyReg || reg || null;
+    const reg = await navigator.serviceWorker.ready;
+    return reg || null;
   }catch(err){
-    console.error("[NOTI] ensureSWReady error:", err);
+    console.error("[NOTI] ready error:", err);
     return null;
   }
 }
@@ -11241,19 +11262,58 @@ function buildNotificationBody(quest){
 }
 
 function shouldUseSystemNotification(){
-  if(document.visibilityState === "visible") return false
-  if(!("Notification" in window)) return false
-  if(Notification.permission !== "granted") return false
-  return true
-}
+  if(document.visibilityState === "visible"){
+    console.log("[QUEST-NOTI] blocked: page visible");
+    return false;
+  }
 
+  if(!("Notification" in window)){
+    console.log("[QUEST-NOTI] blocked: Notification unsupported");
+    return false;
+  }
+
+  if(Notification.permission !== "granted"){
+    console.log("[QUEST-NOTI] blocked: permission =", Notification.permission);
+    return false;
+  }
+
+  console.log("[QUEST-NOTI] pass shouldUseSystemNotification");
+  return true;
+}
 async function sendQuestDoneNotification(questSnapshot){
-  if(notified) return false;
-  if(!shouldUseSystemNotification()) return false;
+  console.log("[QUEST-NOTI] START", {
+    notified,
+    visibility: document.visibilityState,
+    permission: ("Notification" in window) ? Notification.permission : "unsupported",
+    questName: questSnapshot?.name || "",
+    category: questSnapshot?.category || ""
+  });
+
+  if(notified){
+    console.log("[QUEST-NOTI] exit: already notified");
+    return false;
+  }
+
+  if(!shouldUseSystemNotification()){
+    console.log("[QUEST-NOTI] exit: shouldUseSystemNotification = false");
+    return false;
+  }
+
+  console.log("[QUEST-NOTI] passed guard");
 
   try{
-    const reg = await ensureSWReady();
-    if(!reg) return false;
+        console.log("[QUEST-NOTI] before getNotificationRegistration");
+
+    const reg = await getNotificationRegistration();
+
+    console.log("[QUEST-NOTI] reg =", reg);
+
+    if(!reg){
+      console.log("[QUEST-NOTI] exit: no reg");
+      return false;
+    }
+
+    console.log("[QUEST-NOTI] before showNotification");
 
     await reg.showNotification(buildNotificationTitle(questSnapshot), {
       body: buildNotificationBody(questSnapshot),
@@ -11271,14 +11331,17 @@ async function sendQuestDoneNotification(questSnapshot){
       }
     });
 
+    console.log("[QUEST-NOTI] showNotification sent");
+
     notified = true;
+    console.log("[QUEST-NOTI] success: notified=true");
+
     return true;
   }catch(err){
-    console.error("[NOTI] quest done send error:", err);
+    console.log("[QUEST-NOTI] ERROR", err);
     return false;
   }
 }
-
 async function sendSmartWarningNotification(){
   if(notificationMode !== "smart") return false;
   if(smartWarnSent) return false;
@@ -11288,8 +11351,16 @@ async function sendSmartWarningNotification(){
   if(Notification.permission !== "granted") return false;
 
   try{
-    const reg = await ensureSWReady();
-    if(!reg) return false;
+        console.log("[QUEST-NOTI] before getNotificationRegistration");
+
+const reg = await getNotificationRegistration();
+
+console.log("[QUEST-NOTI] reg =", reg);
+
+if(!reg){
+  console.log("[QUEST-NOTI] blocked: no reg");
+  return false;
+}
 
     const emoji = getQuestCategoryEmoji(activeQuest.category);
 
@@ -11307,6 +11378,8 @@ async function sendSmartWarningNotification(){
         dateKey: localDateKey()
       }
     });
+
+    console.log("[QUEST-NOTI] showNotification sent");
 
     smartWarnSent = true;
     return true;
@@ -11327,7 +11400,7 @@ async function registerSW(){
   }
 
   try{
-    const reg = await navigator.serviceWorker.register("/sw.js");
+    const reg = await navigator.serviceWorker.register("./sw.js");
     console.log("[PWA] SW registered", reg.scope);
 
     if (reg.waiting) {
