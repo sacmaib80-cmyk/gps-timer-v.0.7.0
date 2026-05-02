@@ -32,8 +32,27 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("message", (event) => {
-  if(event.data && event.data.type === "SKIP_WAITING"){
+  if(event.data?.type === "SKIP_WAITING"){
     self.skipWaiting();
+  }
+
+  if(event.data?.type === "SCHEDULE_NOTIFICATION"){
+    const { title, body, delayMs, tag } = event.data;
+
+    setTimeout(async () => {
+      const clientList = await self.clients.matchAll({ type: "window" });
+      const isVisible = clientList.some(c => c.visibilityState === "visible");
+
+      if(!isVisible){
+        self.registration.showNotification(title, {
+          body,
+          icon: "./logo-192.png",
+          tag: tag || "sakuraq-quest-done",
+          requireInteraction: true,
+          vibrate: [200, 100, 200]
+        });
+      }
+    }, delayMs);
   }
 });
 

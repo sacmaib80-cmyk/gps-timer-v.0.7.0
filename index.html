@@ -9220,6 +9220,16 @@ rememberQuestName(state.questName)
 
   if(!gateCanStartQuest()){
     showTimerWarn("ติด Morning Gate");
+    // Schedule SW notification เผื่อสลับแอพ
+if(state.cutEnabled && state.cutMinutes && navigator.serviceWorker?.controller){
+  navigator.serviceWorker.controller.postMessage({
+    type: "SCHEDULE_NOTIFICATION",
+    title: `✅ ${state.questName} • ครบเวลาแล้ว`,
+    body: `เปิด SakuraQ เพื่อส่ง Report`,
+    delayMs: state.cutMinutes * 60000,
+    tag: "sakuraq-quest-done"
+  });
+}
     if(isGateActiveToday() && gateIsWorldActiveNow() && !gate.startedAt){
       showGateCover();
       renderGateUX();
