@@ -12833,14 +12833,16 @@ on(document.getElementById("dataPanel"), "click", (e)=>{
 
 // login system
 
-async function cloudSaveAll(){
+async function cloudSaveAll(snapshot = null){
   const uid = window.sqAuth?.uid;
   if(!uid){
-  console.log("skip cloud save (no uid)");
-  return;
-}
+    console.log("skip cloud save (no uid)");
+    return false;
+  }
 
-  const data = loadAll(); // ของเดิมมึง
+  const data = snapshot
+    ? JSON.parse(JSON.stringify(snapshot))
+    : loadAll();
 
   data.updatedAt = Date.now();
 
@@ -12849,16 +12851,18 @@ async function cloudSaveAll(){
     const db = window.sqDB;
 
     await setDoc(doc(db, "users", uid), {
-      data: data,
-      updatedAt: Date.now()
-    });
+      data,
+      updatedAt: data.updatedAt
+    }, { merge: true });
 
-    console.log("☁️ saved to cloud");
+    console.log("☁️ saved to cloud", data.updatedAt);
+    return true;
   }
   catch(e){
-  console.error("cloud load failed", e);
-  showTimerWarn("Cloud sync failed ⚠️");
-}
+    console.error("cloud save failed", e);
+    showTimerWarn?.("Cloud save failed ⚠️ แต่ข้อมูลในเครื่องยังอยู่");
+    return false;
+  }
 }
 async function cloudLoadAll(){
   const uid = window.sqAuth?.uid;
@@ -12883,12 +12887,24 @@ async function cloudLoadAll(){
         localTime = parsed?.updatedAt || 0;
       }catch{}
 
-      if(cloudTime >= localTime){
-        localStorage.setItem(makeScopedKey(KEY_DATA), JSON.stringify(cloudData));
-        console.log("☁️ cloud → local");
-      }else{
-        console.log("⚠️ local newer, skip cloud");
-      }
+      const safeCloudData = normalizeAppData(cloudData);
+
+const cloudQuestCount = Object.values(safeCloudData.days || {})
+  .reduce((sum, day) => sum + (Array.isArray(day.quests) ? day.quests.length : 0), 0);
+
+const localData = loadAll();
+const localQuestCount = Object.values(localData.days || {})
+  .reduce((sum, day) => sum + (Array.isArray(day.quests) ? day.quests.length : 0), 0);
+
+// กัน cloud ว่าง/เสีย ล้าง local ที่มีข้อมูลจริง
+if(cloudQuestCount === 0 && localQuestCount > 0){
+  console.warn("🛡️ skip cloud → local because cloud is empty but local has data");
+}else if(cloudTime > localTime){
+  localStorage.setItem(makeScopedKey(KEY_DATA), JSON.stringify(safeCloudData));
+  console.log("☁️ cloud → local");
+}else{
+  console.log("⚠️ local newer/equal, skip cloud");
+}
 
       console.log("☁️ loaded from cloud");
     }else{
