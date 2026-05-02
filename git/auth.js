@@ -34,6 +34,25 @@ const provider = new GoogleAuthProvider();
 
 let currentUser = null;
 
+function isInAppBrowser(){
+  const ua = navigator.userAgent || "";
+  return /Line|FBAN|FBAV|Instagram|TikTok|Twitter|Messenger/i.test(ua);
+}
+
+function syncAuthGate(user){
+  const gate = document.getElementById("authGate");
+  if (!gate) return;
+
+  if (user || isInAppBrowser()) {
+    gate.style.display = "none";
+    gate.setAttribute("aria-hidden", "true");
+    return;
+  }
+
+  gate.style.display = "flex";
+  gate.setAttribute("aria-hidden", "false");
+}
+
 function getEls() {
   return {
     googleLoginBtn: document.getElementById("googleLoginBtn"),
@@ -86,6 +105,11 @@ function renderSignedIn(user) {
 }
 
 async function loginWithGoogle() {
+  if (isInAppBrowser()) {
+    alert("ถ้าจะล็อกอิน Google ให้เปิดใน Chrome/Safari ก่อน แต่ตอนนี้ยังใช้แบบ Guest ได้");
+    return;
+  }
+
   try {
     await setPersistence(auth, browserLocalPersistence);
     await signInWithPopup(auth, provider);
@@ -133,11 +157,7 @@ onAuthStateChanged(auth, (user) => {
     renderSignedOut();
   }
 
-  const gate = document.getElementById("authGate");
-  if (gate) {
-    gate.style.display = user ? "none" : "flex";
-    gate.setAttribute("aria-hidden", user ? "true" : "false");
-  }
+  syncAuthGate(user);
 
   window.dispatchEvent(new CustomEvent("sq-auth-changed", {
     detail: window.sqAuth
