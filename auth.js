@@ -36,20 +36,25 @@ let currentUser = null;
 
 function isInAppBrowser(){
   const ua = navigator.userAgent || "";
-  return /Line|FBAN|FBAV|Instagram|TikTok|Twitter|Messenger/i.test(ua);
+
+  return /Line|FBAN|FBAV|FB_IAB|FB4A|Instagram|TikTok|Twitter|Messenger|MicroMessenger|wv/i.test(ua);
 }
 
 function syncAuthGate(user){
   const gate = document.getElementById("authGate");
   if (!gate) return;
 
-  if (user || isInAppBrowser()) {
-    gate.style.display = "none";
+  const inApp = isInAppBrowser();
+
+  document.body.classList.toggle("in-app-browser", inApp);
+
+  if (user || inApp) {
+    gate.style.setProperty("display", "none", "important");
     gate.setAttribute("aria-hidden", "true");
     return;
   }
 
-  gate.style.display = "flex";
+  gate.style.setProperty("display", "flex", "important");
   gate.setAttribute("aria-hidden", "false");
 }
 
