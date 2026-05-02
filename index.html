@@ -12835,8 +12835,17 @@ on(document.getElementById("dataPanel"), "click", (e)=>{
 
 async function cloudSaveAll(snapshot = null){
   const uid = window.sqAuth?.uid;
+
   if(!uid){
     console.log("skip cloud save (no uid)");
+    return false;
+  }
+
+  if(!window.sqCloud || !window.sqDB){
+    console.error("cloud save failed: sqCloud/sqDB missing", {
+      sqCloud: window.sqCloud,
+      sqDB: window.sqDB
+    });
     return false;
   }
 
