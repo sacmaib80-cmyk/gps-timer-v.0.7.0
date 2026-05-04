@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>SakuraQ v0.12.2 </title>
+    <title>SakuraQ v0.13.0 </title>
 
     <link rel="manifest" href="./manifest.webmanifest">
 
@@ -2181,13 +2181,13 @@ background-size: 200% 100%;
   width:100%;
   max-width:100%;
   min-height:calc(100dvh - 24px);
-  background:rgba(255,255,255,.72);
-  border:1px solid rgba(15,23,42,.06);
-  border-radius:28px;
+  background:transparent;   /* เอาขาวออก */
+  border:none;              /* เอาขอบออก */
+  border-radius:0;          /* เอามุมโค้งออก */
   padding:0;
   position:relative;
   overflow:hidden;
-  box-shadow:0 16px 36px rgba(15,23,42,.08);
+  box-shadow:none;          /* เอาเงาออก */
 }
 
 .roomScene{
@@ -2620,6 +2620,167 @@ linear-gradient(
 }
 
 /* =========================
+   HOME QUEST FLOW OVERLAY v1
+========================= */
+.homeQuestFlow{
+  position:fixed;
+  inset:0;
+  z-index:125;
+  display:none;
+  pointer-events:none;
+}
+
+.homeQuestFlow.show{
+  display:block;
+  pointer-events:auto;
+}
+
+.homeQuestFlow.show::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(90deg, rgba(248,250,252,.94) 0%, rgba(248,250,252,.82) 48%, rgba(248,250,252,.18) 100%);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+.hqPanel{
+  position:absolute;
+  left:14px;
+  top:86px;
+  bottom:150px;
+  width:min(58vw, 310px);
+  padding:18px;
+  border-radius:28px;
+  background:rgba(255,255,255,.94);
+  border:1px solid rgba(15,23,42,.08);
+  box-shadow:0 24px 60px rgba(15,23,42,.16);
+  overflow:hidden;
+  animation:hqSlideIn .22s ease both;
+}
+
+@keyframes hqSlideIn{
+  from{ opacity:0; transform:translateX(-16px) scale(.98); }
+  to{ opacity:1; transform:translateX(0) scale(1); }
+}
+
+.hqBackBtn{
+  width:42px;
+  height:42px;
+  border-radius:16px;
+  background:rgba(15,23,42,.05);
+  border:1px solid rgba(15,23,42,.08);
+  box-shadow:none;
+  padding:0;
+  margin-bottom:18px;
+  position:relative;
+}
+
+.hqBackBtn span::before,
+.hqBackBtn span::after{
+  content:"";
+  position:absolute;
+  left:16px;
+  top:20px;
+  width:14px;
+  height:3px;
+  border-radius:999px;
+  background:#0f172a;
+  transform-origin:left center;
+}
+
+.hqBackBtn span::before{ transform:rotate(-38deg); }
+.hqBackBtn span::after{ transform:rotate(38deg); }
+
+.hqStep{
+  display:none;
+}
+
+.hqStep.show{
+  display:block;
+}
+
+.hqKicker{
+  font-size:12px;
+  font-weight:900;
+  color:#64748b;
+  margin-bottom:6px;
+}
+
+.hqTitle{
+  margin:0 0 18px;
+  font-size:24px;
+  line-height:1.1;
+  letter-spacing:-.04em;
+}
+
+.hqCategoryList{
+  display:grid;
+  gap:12px;
+}
+
+.hqCatBtn{
+  width:100%;
+  min-height:58px;
+  border-radius:20px;
+  background:linear-gradient(180deg, rgba(96,165,250,.16), rgba(34,197,94,.10));
+  color:#0f172a;
+  border:1px solid rgba(15,23,42,.08);
+  box-shadow:none;
+  text-align:left;
+  padding:0 18px;
+  font-size:16px;
+  font-weight:950;
+}
+
+.hqLabel{
+  font-size:12px;
+  font-weight:900;
+  color:#64748b;
+}
+
+.hqInput{
+  height:52px;
+  border-radius:18px;
+  font-size:15px;
+  font-weight:800;
+}
+
+.hqNameSuggest{
+  margin-top:10px;
+  padding:10px;
+  border-radius:16px;
+  background:rgba(15,23,42,.04);
+  color:#64748b;
+  font-size:12px;
+}
+
+.hqStartBtn{
+  width:100%;
+  margin-top:16px;
+  min-height:54px;
+  border-radius:18px;
+  font-size:17px;
+  font-weight:950;
+  background:linear-gradient(180deg,#50f066,#2dd457);
+}
+
+@media (max-width:480px){
+  .hqPanel{
+    top:74px;
+    bottom:148px;
+    left:10px;
+    width:min(72vw, 300px);
+    padding:16px;
+    border-radius:24px;
+  }
+
+  .hqTitle{
+    font-size:22px;
+  }
+}
+
+/* =========================
    QUEST BAR
 ========================= */
 .questBar{
@@ -2654,6 +2815,69 @@ linear-gradient(
 .questTab.active{
   background:linear-gradient(180deg, rgba(96,165,250,.18), rgba(34,197,94,.14));
   color:#0f172a;
+}
+
+/* =========================
+   HOME START BAR OVERRIDE
+========================= */
+.questBar{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:10px 12px;
+}
+
+.homeStartQuestBtn{
+  width:min(100%, 320px);
+  height:58px;
+  border-radius:22px;
+  background:linear-gradient(180deg,#50f066,#22c55e);
+  color:#052e16;
+  border:1px solid rgba(21,128,61,.20);
+  box-shadow:
+    0 14px 28px rgba(34,197,94,.24),
+    0 5px 0 #15803d,
+    inset 0 1px 0 rgba(255,255,255,.35);
+  font-size:18px;
+  font-weight:1000;
+  letter-spacing:-.02em;
+}
+
+.homeStartQuestBtn{
+  width:min(100%, 320px);
+  height:58px;
+  border-radius:26px;
+
+  background: linear-gradient(180deg,#4ade80,#22c55e);
+  color:#022c22;
+
+  border:1px solid rgba(34,197,94,.25);
+
+  box-shadow:
+    0 10px 24px rgba(34,197,94,.22),
+    inset 0 1px 0 rgba(255,255,255,.4);
+
+  font-size:17px;
+  font-weight:900;
+  letter-spacing:-.02em;
+
+  transition: all .15s ease;
+}
+
+/* hover */
+.homeStartQuestBtn:hover{
+  transform: translateY(-1px);
+  box-shadow:
+    0 14px 30px rgba(34,197,94,.28),
+    inset 0 1px 0 rgba(255,255,255,.4);
+}
+
+/* active */
+.homeStartQuestBtn:active{
+  transform: scale(.97);
+  box-shadow:
+    0 6px 14px rgba(34,197,94,.18),
+    inset 0 1px 0 rgba(255,255,255,.3);
 }
 
 /* =========================
@@ -4254,6 +4478,701 @@ body.in-app-browser #authGate{
   display: none !important;
   pointer-events: none !important;
 }
+
+/* FINAL HOME CLEAN OVERRIDE */
+#homeScene{
+  padding:0 !important;
+}
+
+.roomScene{
+  border-radius:0 !important;
+  background:transparent !important;
+}
+
+.roomBack{
+  background:transparent !important;
+}
+
+#questBar.questBar{
+  background:transparent !important;
+  border:none !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+  padding:10px 12px 16px !important;
+}
+
+#homeStartQuestBtn.homeStartQuestBtn{
+  width:min(100%, 300px);
+  height:56px;
+  border-radius:999px;
+  background:linear-gradient(180deg,#45e878,#22c55e);
+  color:#052e16;
+  border:1px solid rgba(255,255,255,.55);
+  box-shadow:
+    0 12px 26px rgba(34,197,94,.22),
+    inset 0 1px 0 rgba(255,255,255,.45);
+  font-size:17px;
+  font-weight:950;
+}
+
+#homeStartQuestBtn.homeStartQuestBtn:active{
+  transform:scale(.97);
+  box-shadow:
+    0 6px 14px rgba(34,197,94,.16),
+    inset 0 1px 0 rgba(255,255,255,.35);
+}
+
+#homeStartQuestBtn.homeStartQuestBtn{
+  color:#ffffff !important;
+  text-shadow: 0 1px 2px rgba(0,0,0,.18);
+  background:
+    radial-gradient(circle at 30% 20%, rgba(255,255,255,.35), transparent 28%),
+    linear-gradient(180deg,#45e878,#16a34a) !important;
+  box-shadow:
+    0 14px 30px rgba(34,197,94,.28),
+    0 0 0 0 rgba(34,197,94,.30),
+    inset 0 1px 0 rgba(255,255,255,.45) !important;
+  animation: startQuestPulse 2.2s ease-in-out infinite;
+}
+
+#homeStartQuestBtn.homeStartQuestBtn:hover{
+  transform: translateY(-2px) scale(1.015);
+}
+
+#homeStartQuestBtn.homeStartQuestBtn:active{
+  transform: scale(.965);
+  animation:none;
+}
+
+@keyframes startQuestPulse{
+  0%,100%{
+    transform: translateY(0) scale(1);
+    box-shadow:
+      0 14px 30px rgba(34,197,94,.28),
+      0 0 0 0 rgba(34,197,94,.28),
+      inset 0 1px 0 rgba(255,255,255,.45);
+  }
+  50%{
+    transform: translateY(-2px) scale(1.018);
+    box-shadow:
+      0 18px 38px rgba(34,197,94,.34),
+      0 0 0 9px rgba(34,197,94,.08),
+      inset 0 1px 0 rgba(255,255,255,.52);
+  }
+}
+
+#homeStartQuestBtn.homeStartQuestBtn{
+  color:#ffffff !important;
+
+  background:
+    linear-gradient(
+      rgba(0,0,0,.12),   /* ลดจาก .18 → .12 */
+      rgba(0,0,0,.12)
+    ),
+    radial-gradient(circle at 30% 20%, rgba(255,255,255,.55), transparent 32%),
+    linear-gradient(180deg,#66ff8f,#2bff73 55%,#1ed760 100%) !important;
+
+  text-shadow:
+    0 2px 6px rgba(0,0,0,.35),
+    0 1px 2px rgba(0,0,0,.25);
+
+  box-shadow:
+    0 16px 34px rgba(34,255,120,.42),
+    0 0 0 0 rgba(34,255,120,.28),
+    inset 0 1px 0 rgba(255,255,255,.6);
+
+  animation: startQuestPulse 2s ease-in-out infinite;
+}
+
+/* =========================
+   HOME RUNNING SCREEN v1
+========================= */
+.homeRunScreen{
+  position:fixed;
+  inset:0;
+  z-index:140;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:22px;
+  background:
+    radial-gradient(700px 420px at 50% 18%, rgba(34,197,94,.18), transparent 60%),
+    linear-gradient(180deg, rgba(248,251,255,.96), rgba(238,247,255,.92));
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.homeRunScreen.show{
+  display:flex;
+}
+
+.homeRunCard{
+  width:min(420px, 100%);
+  text-align:center;
+  padding:28px 20px 22px;
+  border-radius:34px;
+  background:rgba(255,255,255,.74);
+  border:1px solid rgba(255,255,255,.7);
+  box-shadow:0 24px 70px rgba(15,23,42,.12);
+}
+
+.homeRunMascotSlot{
+  width:118px;
+  height:118px;
+  margin:0 auto 18px;
+  border-radius:34px;
+  display:grid;
+  place-items:center;
+  font-size:62px;
+  background:linear-gradient(180deg, rgba(255,255,255,.85), rgba(219,234,254,.55));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.8), 0 14px 34px rgba(96,165,250,.12);
+  animation:homeMascotFloat 2.4s ease-in-out infinite;
+}
+
+.homeRunTime{
+  font-size:clamp(54px, 13vw, 78px);
+  line-height:1;
+  font-weight:1000;
+  letter-spacing:-.05em;
+  font-variant-numeric:tabular-nums;
+  color:#0f172a;
+}
+
+.homeRunQuest{
+  margin-top:10px;
+  font-size:14px;
+  font-weight:850;
+  color:#64748b;
+}
+
+.homeRunMainBtns{
+  margin-top:24px;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+
+/* 👇 สลับตำแหน่งด้วย order */
+#homeRunStopBtn{
+  order:1;   /* ไปซ้าย */
+}
+
+#homeRunPauseBtn{
+  order:2;   /* ไปขวา */
+}
+
+#homeRunStopBtn{
+  filter: brightness(.96);
+}
+
+#homeRunPauseBtn{
+  background: rgba(15,23,42,.08);
+}
+
+.homeRunBtn{
+  height:56px;
+  border-radius:20px;
+  font-size:17px;
+  font-weight:950;
+}
+
+.homeRunBtn.secondary{
+  background:rgba(15,23,42,.06);
+  color:#0f172a;
+  border:1px solid rgba(15,23,42,.08);
+  box-shadow:none;
+}
+
+.homeRunBtn.stop{
+  background:linear-gradient(180deg,#fb7185,#e11d48);
+  color:white;
+  box-shadow:0 12px 26px rgba(225,29,72,.22);
+}
+
+.homeRunExtraBtns{
+  margin-top:12px;
+  display:flex;
+  justify-content:center;
+  gap:10px;
+}
+
+.homeRunExtraBtns button{
+  height:38px;
+  padding:0 14px;
+  border-radius:999px;
+  background:rgba(15,23,42,.05);
+  color:#64748b;
+  border:1px solid rgba(15,23,42,.07);
+  box-shadow:none;
+  font-size:13px;
+  font-weight:900;
+}
+
+@keyframes homeMascotFloat{
+  0%,100%{ transform:translateY(0); }
+  50%{ transform:translateY(-6px); }
+}
+
+#homeRunPauseBtn{
+  transition:
+    transform .14s ease,
+    box-shadow .14s ease,
+    background .18s ease,
+    color .18s ease;
+}
+
+#homeRunPauseBtn.resumeMode{
+  background:
+    radial-gradient(circle at 30% 20%, rgba(255,255,255,.35), transparent 32%),
+    linear-gradient(180deg,#4ade80,#22c55e);
+  color:#ffffff;
+  border:1px solid rgba(34,197,94,.28);
+  box-shadow:
+    0 12px 26px rgba(34,197,94,.22),
+    inset 0 1px 0 rgba(255,255,255,.42);
+  animation: resumePulse 1.7s ease-in-out infinite;
+}
+
+@keyframes resumePulse{
+  0%,100%{
+    transform:scale(1);
+    box-shadow:
+      0 12px 26px rgba(34,197,94,.22),
+      0 0 0 0 rgba(34,197,94,.22),
+      inset 0 1px 0 rgba(255,255,255,.42);
+  }
+  50%{
+    transform:scale(1.025);
+    box-shadow:
+      0 16px 34px rgba(34,197,94,.30),
+      0 0 0 8px rgba(34,197,94,.08),
+      inset 0 1px 0 rgba(255,255,255,.5);
+  }
+}
+
+.hqQuickTime{
+  display:flex;
+  gap:8px;
+  margin-top:8px;
+  flex-wrap:wrap;
+}
+
+.hqTimeChip{
+  padding:6px 12px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:900;
+  background:rgba(15,23,42,.05);
+  color:#0f172a;
+  border:1px solid rgba(15,23,42,.08);
+  box-shadow:none;
+}
+
+/* HOME QUEST SETUP SPACING FIX */
+#hqStepSetup .hqLabel{
+  margin-top:14px;
+  margin-bottom:8px;
+  display:block;
+}
+
+#hqQuestName,
+#hqQuestTime{
+  margin-bottom:12px;
+}
+
+.hqQuickTime{
+  margin-top:8px;
+  margin-bottom:20px;
+  gap:10px;
+}
+
+.hqTimeChip{
+  padding:8px 14px;
+}
+
+#hqStartBtn.hqStartBtn{
+  margin-top:10px;
+}
+
+/* =========================
+   HOME REPORT INTRO v1
+========================= */
+.homeReportIntro{
+  position:fixed;
+  inset:0;
+  z-index:155;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  background:
+    radial-gradient(520px 320px at 50% 38%, rgba(245,158,11,.24), transparent 60%),
+    rgba(15,23,42,.38);
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+}
+
+.homeReportIntro.show{
+  display:flex;
+}
+
+.homeReportIntroCard{
+  text-align:center;
+  animation:homeReportPop .34s ease both;
+}
+
+.homeReportStar{
+  font-size:76px;
+  line-height:1;
+  filter:drop-shadow(0 14px 28px rgba(245,158,11,.32));
+  animation:homeReportStarPop .62s cubic-bezier(.2,1.4,.3,1) both;
+}
+
+.homeReportText{
+  margin-top:14px;
+  font-size:20px;
+  font-weight:1000;
+  color:white;
+  text-shadow:0 2px 8px rgba(0,0,0,.28);
+}
+
+@keyframes homeReportPop{
+  from{ opacity:0; transform:scale(.92); }
+  to{ opacity:1; transform:scale(1); }
+}
+
+@keyframes homeReportStarPop{
+  0%{ transform:scale(.35) rotate(-16deg); opacity:0; }
+  65%{ transform:scale(1.22) rotate(8deg); opacity:1; }
+  100%{ transform:scale(1) rotate(0); opacity:1; }
+}
+
+.sqStar{
+  --star:#facc15;
+  width:82px;
+  height:82px;
+  display:inline-block;
+  background:
+    radial-gradient(circle at 35% 28%, rgba(255,255,255,.9), transparent 18%),
+    linear-gradient(180deg,#fde047,#f59e0b);
+  clip-path: polygon(
+    50% 0%,
+    62% 34%,
+    98% 35%,
+    69% 56%,
+    79% 91%,
+    50% 70%,
+    21% 91%,
+    31% 56%,
+    2% 35%,
+    38% 34%
+  );
+  filter:
+    drop-shadow(0 16px 22px rgba(245,158,11,.36))
+    drop-shadow(0 0 18px rgba(250,204,21,.34));
+}
+
+.homeReportStar{
+  font-size:0;
+}
+
+/* =========================
+   HOME REPORT SCREEN v1
+========================= */
+.homeReportScreen{
+  position:fixed;
+  inset:0;
+  z-index:156;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:18px;
+  background:
+    radial-gradient(620px 420px at 50% 20%, rgba(96,165,250,.18), transparent 62%),
+    linear-gradient(180deg, rgba(248,251,255,.96), rgba(238,247,255,.94));
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+}
+
+.homeReportScreen.show{
+  display:flex;
+}
+
+.homeReportPanel{
+  width:min(390px, 100%);
+  min-height:min(620px, calc(100dvh - 36px));
+  padding:18px;
+  border-radius:34px;
+  background:rgba(255,255,255,.82);
+  border:1px solid rgba(255,255,255,.72);
+  box-shadow:0 24px 70px rgba(15,23,42,.14);
+}
+
+.homeReportBackBtn{
+  width:42px;
+  height:42px;
+  border-radius:16px;
+  background:rgba(15,23,42,.05);
+  border:1px solid rgba(15,23,42,.08);
+  box-shadow:none;
+  padding:0;
+  position:relative;
+}
+
+.homeReportBackBtn span::before,
+.homeReportBackBtn span::after{
+  content:"";
+  position:absolute;
+  left:16px;
+  top:20px;
+  width:14px;
+  height:3px;
+  border-radius:999px;
+  background:#0f172a;
+  transform-origin:left center;
+}
+
+.homeReportBackBtn span::before{ transform:rotate(-38deg); }
+.homeReportBackBtn span::after{ transform:rotate(38deg); }
+
+.homeReportTop{
+  margin-top:18px;
+}
+
+.homeReportMini{
+  font-size:12px;
+  font-weight:950;
+  color:#64748b;
+}
+
+.homeReportTop h2{
+  margin:6px 0 6px;
+  font-size:26px;
+  line-height:1.05;
+  letter-spacing:-.05em;
+}
+
+.homeReportTop p{
+  margin:0 0 18px;
+  font-size:13px;
+  color:#64748b;
+  font-weight:750;
+}
+
+.homeReportStep{
+  display:none;
+}
+
+.homeReportStep.show{
+  display:block;
+}
+
+.homeReportLabel,
+.homeReportQuestion{
+  display:block;
+  margin-bottom:8px;
+  font-size:13px;
+  font-weight:950;
+  color:#334155;
+}
+
+.homeReportTextarea{
+  min-height:150px;
+  border-radius:22px;
+  padding:14px;
+  font-size:14px;
+  font-weight:750;
+  background:rgba(255,255,255,.94);
+  border:1px solid rgba(15,23,42,.10);
+}
+
+.homeReportTextarea.small{
+  min-height:78px;
+  margin-top:10px;
+}
+
+.homeReportPrimary{
+  width:100%;
+  height:56px;
+  margin-top:16px;
+  border-radius:22px;
+  background:linear-gradient(180deg,#45e878,#22c55e);
+  color:white;
+  font-size:17px;
+  font-weight:1000;
+  box-shadow:0 14px 30px rgba(34,197,94,.25);
+}
+
+.homeReportChoiceGrid{
+  display:grid;
+  gap:10px;
+}
+
+.homeReportChoiceGrid button{
+  width:100%;
+  min-height:54px;
+  border-radius:20px;
+  color:#0f172a;
+  background:rgba(15,23,42,.05);
+  border:1px solid rgba(15,23,42,.08);
+  box-shadow:none;
+}
+
+.homeReportChoiceGrid button.active{
+  color:#166534;
+  background:linear-gradient(180deg, rgba(34,197,94,.18), rgba(34,197,94,.08));
+  border-color:rgba(34,197,94,.26);
+}
+
+.homeReportMethodBox{
+  margin-top:12px;
+} 
+
+#homeReportSubmitBtn.locked{
+  background:linear-gradient(180deg,#fb7185,#e11d48) !important;
+  box-shadow:0 14px 30px rgba(225,29,72,.24) !important;
+  color:white !important;
+}
+
+/* =========================
+   HOME RESULT SCREEN v1
+========================= */
+.homeResultScreen{
+  position:fixed;
+  inset:0;
+  z-index:170;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:18px;
+  background:
+    radial-gradient(700px 420px at 50% 26%, rgba(34,197,94,.20), transparent 62%),
+    radial-gradient(520px 360px at 50% 62%, rgba(96,165,250,.20), transparent 60%),
+    linear-gradient(180deg, rgba(248,251,255,.97), rgba(236,247,255,.95));
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+}
+
+.homeResultScreen.show{
+  display:flex;
+}
+
+.homeResultPanel{
+  width:min(390px, 100%);
+  padding:28px 22px 24px;
+  border-radius:34px;
+  background:rgba(255,255,255,.82);
+  border:1px solid rgba(255,255,255,.76);
+  box-shadow:0 26px 80px rgba(15,23,42,.16);
+  text-align:center;
+}
+
+.homeResultMini{
+  font-size:12px;
+  font-weight:950;
+  color:#64748b;
+}
+
+.homeResultPanel h2{
+  margin:6px 0 26px;
+  font-size:32px;
+  letter-spacing:-.06em;
+}
+
+.powerGraph{
+  position:relative;
+}
+
+.powerTrack{
+  height:42px;
+  border-radius:999px;
+  overflow:hidden;
+  background:rgba(15,23,42,.08);
+  border:1px solid rgba(15,23,42,.08);
+  box-shadow:inset 0 2px 8px rgba(15,23,42,.08);
+}
+
+.powerFill{
+  position:relative;
+  width:0%;
+  height:100%;
+  border-radius:inherit;
+  background:
+    linear-gradient(90deg,#22c55e,#4ade80,#38bdf8);
+  box-shadow:
+    0 0 22px rgba(34,197,94,.36),
+    inset 0 1px 0 rgba(255,255,255,.55);
+  transition:width 1.25s cubic-bezier(.17,.9,.24,1);
+  overflow:visible;
+}
+
+.powerAura{
+  position:absolute;
+  right:-18px;
+  top:50%;
+  width:42px;
+  height:70px;
+  transform:translateY(-50%);
+  border-radius:999px;
+  background:
+    radial-gradient(circle, rgba(255,255,255,.9), transparent 34%),
+    radial-gradient(circle, rgba(56,189,248,.55), transparent 62%);
+  filter:blur(.2px);
+  animation:powerAuraPulse .45s ease-in-out infinite alternate;
+}
+
+.powerFill::after{
+  content:"";
+  position:absolute;
+  inset:-10px -18px;
+  background:
+    repeating-linear-gradient(
+      115deg,
+      rgba(255,255,255,.0) 0 10px,
+      rgba(255,255,255,.38) 11px 14px,
+      rgba(255,255,255,.0) 15px 28px
+    );
+  opacity:.55;
+  animation:powerSlash 700ms linear infinite;
+}
+
+.powerPercent{
+  margin-top:18px;
+  font-size:46px;
+  line-height:1;
+  font-weight:1000;
+  letter-spacing:-.06em;
+  color:#0f172a;
+}
+
+.powerText{
+  margin-top:10px;
+  font-size:13px;
+  font-weight:850;
+  color:#64748b;
+}
+
+.homeResultDoneBtn{
+  width:100%;
+  height:56px;
+  margin-top:24px;
+  border-radius:22px;
+  background:linear-gradient(180deg,#45e878,#22c55e);
+  color:white;
+  font-size:17px;
+  font-weight:1000;
+  box-shadow:0 14px 30px rgba(34,197,94,.25);
+}
+
+@keyframes powerSlash{
+  from{ transform:translateX(-40px); }
+  to{ transform:translateX(40px); }
+}
+
+@keyframes powerAuraPulse{
+  from{ transform:translateY(-50%) scale(.92); opacity:.7; }
+  to{ transform:translateY(-50%) scale(1.12); opacity:1; }
+}
 </style>
 </head>
 <body>
@@ -4418,7 +5337,7 @@ body.in-app-browser #authGate{
                   <div class="brandMeta">
                     <div class="brandTitleRow">
                       <h1>SakuraQ</h1>
-                      <span class="versionBadge">v0.12.2</span>
+                      <span class="versionBadge">v0.13.0</span>
                     </div>
                     <div class="sub" id="todayText">Today: ----</div>
                   </div>
@@ -5099,13 +6018,158 @@ body.in-app-browser #authGate{
     <div class="dataPanelWarn">Import อาจ merge หรือ replace ข้อมูลเดิม</div>
   </div>
 </div>
-  <!-- Quest Category Bar -->
-  <div class="questBar" id="questBar">
-    <button class="questTab active" type="button" data-category="Learning">Learn</button>
-    <button class="questTab" type="button" data-category="Work/Project">Work</button>
-    <button class="questTab" type="button" data-category="Physical">Physical</button>
-    <button class="questTab" type="button" data-category="Connection">Connect</button>
+
+<!-- Home Quest Flow Overlay -->
+<div id="homeQuestFlow" class="homeQuestFlow" aria-hidden="true">
+  <div class="hqPanel">
+    <button id="hqBackBtn" class="hqBackBtn" type="button" aria-label="Back">
+      <span></span>
+    </button>
+
+    <div id="hqStepCategory" class="hqStep show">
+      <div class="hqKicker">Start Quest</div>
+      <h2 class="hqTitle">Choose your category</h2>
+
+      <div class="hqCategoryList">
+        <button class="hqCatBtn" type="button" data-category="Learning">Learn</button>
+        <button class="hqCatBtn" type="button" data-category="Work/Project">Work</button>
+        <button class="hqCatBtn" type="button" data-category="Physical">Physical</button>
+        <button class="hqCatBtn" type="button" data-category="Connection">Connect</button>
+      </div>
+    </div>
+
+    <div id="hqStepSetup" class="hqStep">
+      <div class="hqKicker">Quest Setup</div>
+      <h2 id="hqSetupTitle" class="hqTitle">Name your quest</h2>
+
+      <label class="hqLabel" for="hqQuestName">Quest name</label>
+      <input id="hqQuestName" class="hqInput" type="text" placeholder="เช่น Coding 30 min">
+
+      <!-- ⏱ Time Input -->
+<label class="hqLabel">Time (minutes)</label>
+<input id="hqQuestTime" class="hqInput" type="number" min="1" max="300" placeholder="เช่น 30">
+
+<div class="hqQuickTime">
+  <button type="button" class="hqTimeChip" data-min="25">25m</button>
+  <button type="button" class="hqTimeChip" data-min="30">30m</button>
+  <button type="button" class="hqTimeChip" data-min="45">45m</button>
+  <button type="button" class="hqTimeChip" data-min="60">60m</button>
+</div>
+
+      <div id="hqNameSuggest" class="hqNameSuggest" hidden></div>
+
+      <button id="hqStartBtn" class="hqStartBtn" type="button">Start</button>
+    </div>
   </div>
+</div>
+
+
+  <!-- Quest Category Bar -->
+
+  <!-- Home Running Screen -->
+<div id="homeRunScreen" class="homeRunScreen" aria-hidden="true">
+  <div class="homeRunCard">
+    <div class="homeRunMascotSlot">🦊</div>
+
+    <div id="homeRunTime" class="homeRunTime">00:00:00</div>
+    <div id="homeRunQuest" class="homeRunQuest">Quest running</div>
+
+    <div class="homeRunMainBtns">
+      <button id="homeRunPauseBtn" type="button" class="homeRunBtn secondary">Pause</button>
+      <button id="homeRunStopBtn" type="button" class="homeRunBtn stop">Stop</button>
+    </div>
+
+    <div class="homeRunExtraBtns">
+      <button id="homeRunPlus5Btn" type="button">+5m</button>
+      <button id="homeRunPlus10Btn" type="button">+10m</button>
+    </div>
+  </div>
+</div>
+
+<!-- Home Report Intro -->
+<div id="homeReportIntro" class="homeReportIntro" aria-hidden="true">
+  <div class="homeReportIntroCard">
+    <div class="homeReportStar" aria-hidden="true">
+  <span class="sqStar"></span>
+</div>
+    <div class="homeReportText">Quest Complete</div>
+  </div>
+</div>
+
+<!-- Home Report Screen -->
+<div id="homeReportScreen" class="homeReportScreen" aria-hidden="true">
+  <div class="homeReportPanel">
+    <button id="homeReportBackBtn" class="homeReportBackBtn" type="button">
+      <span></span>
+    </button>
+
+    <div class="homeReportTop">
+      <div class="homeReportMini">Report</div>
+      <h2>How was this quest?</h2>
+      <p id="homeReportSummary">สรุปสิ่งที่ทำแบบสั้นๆ</p>
+    </div>
+
+    <div class="homeReportStep show" id="homeReportStep1">
+      <label class="homeReportLabel">Main note</label>
+      <textarea id="homeReportNoteInput" class="homeReportTextarea" placeholder="วันนี้ทำอะไร / ได้อะไร / ติดอะไร"></textarea>
+
+      <button id="homeReportNextBtn" class="homeReportPrimary" type="button">Next</button>
+    </div>
+
+    <div class="homeReportStep" id="homeReportStep2">
+      <div class="homeReportQuestion">มี insight หรือเปลี่ยนวิธีทำไหม?</div>
+
+      <div class="homeReportChoiceGrid">
+        <button id="homeReportNormalBtn" type="button">Normal report</button>
+        <button id="homeReportMethodBtn" type="button">Method Change +4</button>
+        <button id="homeReportBehaviorBtn" type="button">Confirm Behavior +6</button>
+      </div>
+
+      <div id="homeReportMethodBox" class="homeReportMethodBox" hidden>
+        <textarea id="homeReportWhyInput" class="homeReportTextarea small" placeholder="Why / ทำไมถึงคิดแบบนี้"></textarea>
+        <textarea id="homeReportFromInput" class="homeReportTextarea small" placeholder="From / พฤติกรรมเดิม"></textarea>
+        <textarea id="homeReportToInput" class="homeReportTextarea small" placeholder="To / พฤติกรรมใหม่"></textarea>
+      </div>
+
+      <div id="homeReportBehaviorBox" class="homeReportMethodBox" hidden>
+  <input id="homeReportClaimKeyInput" class="homeReportTextarea small" placeholder="ใส่ key ของเมื่อวาน">
+  <textarea id="homeReportClaimProofInput" class="homeReportTextarea small" placeholder="พิสูจน์ว่าทำจริง เช่น วันนี้ทำซ้ำยังไง"></textarea>
+</div>
+
+      <button id="homeReportSubmitBtn" class="homeReportPrimary" type="button">Submit Report</button>
+    </div>
+  </div>
+</div>
+
+<!-- Home Result Screen -->
+<div id="homeResultScreen" class="homeResultScreen" aria-hidden="true">
+  <div class="homeResultPanel">
+    <div class="homeResultMini">Quest Result</div>
+    <h2>Power Up</h2>
+
+    <div class="powerGraph">
+      <div class="powerTrack">
+        <div id="powerFill" class="powerFill">
+          <span class="powerAura"></span>
+        </div>
+      </div>
+      <div id="powerPercent" class="powerPercent">0%</div>
+    </div>
+
+    <div id="powerText" class="powerText">Daily Progress 0 / 100</div>
+
+    <button id="homeResultDoneBtn" class="homeResultDoneBtn" type="button">
+      Continue
+    </button>
+  </div>
+</div>
+
+ <!-- Home Start Bar -->
+<div class="questBar" id="questBar">
+  <button id="homeStartQuestBtn" class="homeStartQuestBtn" type="button">
+    Start Quest
+  </button>
+</div>
 
   <!-- Bottom Navigation -->
 <nav class="bottomNav" aria-label="Main Navigation">
@@ -11199,16 +12263,455 @@ document.querySelectorAll(".bottomNavBtn").forEach(btn=>{
   });
 });
 
-document.querySelectorAll(".questTab").forEach(btn=>{
-  btn.addEventListener("click", ()=>{
-    setQuestCategory(btn.dataset.category);
+document.getElementById("homeStartQuestBtn")?.addEventListener("click", ()=>{
+  if(document.getElementById("homeScene")?.classList.contains("page-active")){
+    openHomeQuestFlow(state.selectedCategory || "Learning");
+    return;
+  }
 
-    // ถ้าไม่ได้อยู่ใน app page ให้เด้งเข้า timer
-    if(!document.getElementById("appPage")?.classList.contains("page-active")){
-      switchPage("appPage");
-    }
-    scrollToId("sec-timer");
+  switchPage("homeScene");
+  setTimeout(()=> openHomeQuestFlow(state.selectedCategory || "Learning"), 80);
+});
+
+let homeQuestDraftCategory = state.selectedCategory || "Learning";
+
+function openHomeQuestFlow(category){
+  if(state.status === "running" || state.status === "paused"){
+    showActionLockBar("ตอนนี้กำลังทำเควสอยู่ ต้องหยุดหรือส่งรายงานก่อนนะ");
+    return;
+  }
+
+  homeQuestDraftCategory = category || state.selectedCategory || "Learning";
+  setQuestCategory(homeQuestDraftCategory);
+
+  const flow = document.getElementById("homeQuestFlow");
+  const nameInput = document.getElementById("hqQuestName");
+
+  showHomeQuestStep("category");
+
+  if(nameInput){
+    nameInput.value = state.questName || "";
+  }
+
+  flow?.classList.add("show");
+  flow?.setAttribute("aria-hidden", "false");
+}
+
+function closeHomeQuestFlow(){
+  const flow = document.getElementById("homeQuestFlow");
+  flow?.classList.remove("show");
+  flow?.setAttribute("aria-hidden", "true");
+}
+
+function showHomeQuestStep(step){
+  document.getElementById("hqStepCategory")?.classList.toggle("show", step === "category");
+  document.getElementById("hqStepSetup")?.classList.toggle("show", step === "setup");
+
+  const title = document.getElementById("hqSetupTitle");
+  if(title && step === "setup"){
+    title.textContent = `${homeQuestDraftCategory.replace("Work/Project","Work")} quest`;
+  }
+}
+
+document.querySelectorAll(".hqCatBtn").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    homeQuestDraftCategory = btn.dataset.category || "Learning";
+    setQuestCategory(homeQuestDraftCategory);
+    showHomeQuestStep("setup");
+    setTimeout(()=> document.getElementById("hqQuestName")?.focus(), 80);
   });
+});
+
+document.getElementById("hqBackBtn")?.addEventListener("click", ()=>{
+  const setupShowing = document.getElementById("hqStepSetup")?.classList.contains("show");
+
+  if(setupShowing){
+    showHomeQuestStep("category");
+    return;
+  }
+
+  closeHomeQuestFlow();
+});
+
+document.getElementById("hqStartBtn")?.addEventListener("click", ()=>{
+  const name = document.getElementById("hqQuestName")?.value.trim();
+
+  const cleanName = normQuestName(name);
+const todayKey = localDateKey();
+
+if(!cleanName){
+  document.getElementById("hqQuestName")?.focus();
+  showActionLockBar("ต้องใส่ชื่อเควสก่อนนะ");
+  return;
+}
+
+if(isQuestNameDuplicateToday(todayKey, cleanName)){
+  document.getElementById("hqQuestName")?.focus();
+  showActionLockBar("ชื่อนี้มีแล้วในวันนี้ เปลี่ยนชื่อใหม่ก่อนนะ");
+  return;
+}
+
+  if(!name){
+    document.getElementById("hqQuestName")?.focus();
+    return;
+  }
+
+const rawMin = document.getElementById("hqQuestTime")?.value;
+const inputMin = parseInt(rawMin, 10);
+
+if(!Number.isFinite(inputMin) || inputMin < 1){
+  document.getElementById("hqQuestTime")?.focus();
+  showActionLockBar("เวลาต้องอย่างน้อย 1 นาที");
+  return;
+}
+
+window.homeRunEndTs = Date.now() + inputMin * 60000;
+
+  setQuestCategory(homeQuestDraftCategory);
+
+  if(el.questName) el.questName.value = cleanName;
+state.questName = cleanName;
+  saveState();
+
+  closeHomeQuestFlow();
+
+  switchPage("appPage");
+  scrollToId("sec-timer");
+
+  setTimeout(()=>{
+    el.startBtn?.click();
+    showHomeRunScreen();
+  }, 120);
+});
+
+document.querySelectorAll(".hqTimeChip").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    const min = btn.dataset.min;
+    document.getElementById("hqQuestTime").value = min;
+  });
+});
+
+let homeRunSyncTimer = null;
+
+let homeRunPausedRemain = null;
+
+function showHomeRunScreen(){
+  const screen = document.getElementById("homeRunScreen");
+  if(!screen) return;
+
+  screen.classList.add("show");
+  screen.setAttribute("aria-hidden", "false");
+
+  syncHomeRunScreen();
+
+  clearInterval(homeRunSyncTimer);
+  homeRunSyncTimer = setInterval(syncHomeRunScreen, 500);
+}
+
+function hideHomeRunScreen(){
+  const screen = document.getElementById("homeRunScreen");
+  if(!screen) return;
+
+  screen.classList.remove("show");
+  screen.setAttribute("aria-hidden", "true");
+
+  clearInterval(homeRunSyncTimer);
+  homeRunSyncTimer = null;
+}
+
+function showHomeReportIntro(){
+  const intro = document.getElementById("homeReportIntro");
+
+  if(!intro){
+    showHomeReportScreen();
+    return;
+  }
+
+  intro.classList.add("show");
+  intro.setAttribute("aria-hidden", "false");
+
+  setTimeout(()=>{
+    intro.classList.remove("show");
+    intro.setAttribute("aria-hidden", "true");
+
+    showHomeReportScreen();
+  }, 900);
+}
+
+document.getElementById("homeReportNextBtn")?.addEventListener("click", ()=>{
+  const note = document.getElementById("homeReportNoteInput")?.value.trim() || "";
+
+  if(el.notes) el.notes.value = note;
+
+  document.getElementById("homeReportStep1")?.classList.remove("show");
+  document.getElementById("homeReportStep2")?.classList.add("show");
+
+setHomeReportMode("normal");
+
+updateHomeReportLockUI();
+});
+
+
+document.getElementById("homeReportNormalBtn")?.addEventListener("click", ()=>{
+  setHomeReportMode("normal");
+});
+
+document.getElementById("homeReportMethodBtn")?.addEventListener("click", ()=>{
+  setHomeReportMode("method");
+});
+
+document.getElementById("homeReportBehaviorBtn")?.addEventListener("click", ()=>{
+  setHomeReportMode("behavior");
+});
+
+document.getElementById("homeReportSubmitBtn")?.addEventListener("click", ()=>{
+
+  const reportMin = getHomeReportMinutes();
+
+if(reportMin < 1){
+  updateHomeReportLockUI();
+  showActionLockBar("เวลาทำเควสต้องอย่างน้อย 1 นาที ถึงจะ submit report ได้");
+  return;
+}
+
+  if(el.notes){
+    el.notes.value = document.getElementById("homeReportNoteInput")?.value.trim() || "";
+  }
+
+  // กัน Method Change ค้างจาก report ก่อนหน้า
+  if(el.methodChangeWrap && !el.methodChangeWrap.hidden && homeReportMode !== "method"){
+    el.toggleMethodChangeBtn?.click();
+  }
+
+  // กัน Claim +6 ค้างจาก report ก่อนหน้า
+  if(el.claimWrap && !el.claimWrap.hidden && homeReportMode !== "behavior"){
+    el.toggleClaimBtn?.click();
+  }
+
+  // METHOD +4
+  if(homeReportMode === "method"){
+    if(el.methodChangeWrap && el.methodChangeWrap.hidden){
+      el.toggleMethodChangeBtn?.click();
+    }
+
+    if(el.insightWhy) el.insightWhy.value = document.getElementById("homeReportWhyInput")?.value.trim() || "";
+    if(el.insightFrom) el.insightFrom.value = document.getElementById("homeReportFromInput")?.value.trim() || "";
+    if(el.insightTo) el.insightTo.value = document.getElementById("homeReportToInput")?.value.trim() || "";
+  }
+
+  // BEHAVIOR +6
+  if(homeReportMode === "behavior"){
+    if(el.claimWrap && el.claimWrap.hidden){
+      el.toggleClaimBtn?.click();
+    }
+
+    if(el.claimKeyInput) el.claimKeyInput.value = document.getElementById("homeReportClaimKeyInput")?.value.trim() || "";
+    if(el.claimProof) el.claimProof.value = document.getElementById("homeReportClaimProofInput")?.value.trim() || "";
+  }
+
+  const todayKey = localDateKey();
+const beforeScore = calcDayTotal(todayKey);
+
+hideHomeReportScreen();
+el.submitReportBtn?.click();
+
+setTimeout(()=>{
+  const afterScore = calcDayTotal(todayKey);
+  showHomeResultScreen(beforeScore, afterScore);
+}, 120);
+});
+
+document.getElementById("homeReportBackBtn")?.addEventListener("click", ()=>{
+  const step2 = document.getElementById("homeReportStep2")?.classList.contains("show");
+
+  if(step2){
+    document.getElementById("homeReportStep2")?.classList.remove("show");
+    document.getElementById("homeReportStep1")?.classList.add("show");
+    return;
+  }
+
+  hideHomeReportScreen();
+  switchPage("appPage");
+  setTimeout(()=> scrollToId("sec-report"), 120);
+});
+
+function getHomeReportMinutes(){
+  const min = parseFloat(el.reportMinutes?.value);
+  return Number.isFinite(min) ? min : 0;
+}
+
+function formatHomeReportTime(min){
+  if(min < 1){
+    const sec = Math.max(0, Math.floor(min * 60));
+    return `${sec} sec`;
+  }
+
+  return `${Math.floor(min)} min`;
+}
+
+function updateHomeReportLockUI(){
+  const min = getHomeReportMinutes();
+  const summary = document.getElementById("homeReportSummary");
+  const submitBtn = document.getElementById("homeReportSubmitBtn");
+
+  if(summary){
+    summary.textContent = `${state.questName || "Quest"} • ${formatHomeReportTime(min)}`;
+  }
+
+  if(submitBtn){
+    const locked = min < 1;
+    submitBtn.classList.toggle("locked", locked);
+    submitBtn.textContent = locked
+      ? "Locked: minimum 1 min"
+      : "Submit Report";
+  }
+}
+
+function showHomeReportScreen(){
+  const screen = document.getElementById("homeReportScreen");
+  if(!screen) return;
+
+  switchPage("homeScene");
+
+  screen.classList.add("show");
+  screen.setAttribute("aria-hidden","false");
+
+  document.getElementById("homeReportStep1")?.classList.add("show");
+  document.getElementById("homeReportStep2")?.classList.remove("show");
+
+ updateHomeReportLockUI();
+}
+
+function hideHomeReportScreen(){
+  const screen = document.getElementById("homeReportScreen");
+  screen?.classList.remove("show");
+  screen?.setAttribute("aria-hidden","true");
+}
+
+function showHomeResultScreen(beforeScore, afterScore){
+  const screen = document.getElementById("homeResultScreen");
+  const fill = document.getElementById("powerFill");
+  const percentEl = document.getElementById("powerPercent");
+  const textEl = document.getElementById("powerText");
+
+  if(!screen) return;
+
+  const before = Math.max(0, Math.min(100, Number(beforeScore) || 0));
+  const after = Math.max(0, Math.min(100, Number(afterScore) || 0));
+
+  screen.classList.add("show");
+  screen.setAttribute("aria-hidden","false");
+
+  if(fill) fill.style.width = `${before}%`;
+  if(percentEl) percentEl.textContent = `${Math.floor(before)}%`;
+  if(textEl) textEl.textContent = `Daily Progress ${afterScore} / 100`;
+
+  requestAnimationFrame(()=>{
+    setTimeout(()=>{
+      if(fill) fill.style.width = `${after}%`;
+
+      const start = performance.now();
+      const duration = 1250;
+
+      function tick(now){
+        const t = Math.min(1, (now - start) / duration);
+        const eased = 1 - Math.pow(1 - t, 3);
+        const val = before + (after - before) * eased;
+
+        if(percentEl) percentEl.textContent = `${Math.floor(val)}%`;
+
+        if(t < 1) requestAnimationFrame(tick);
+      }
+
+      requestAnimationFrame(tick);
+    }, 120);
+  });
+}
+
+document.getElementById("homeResultDoneBtn")?.addEventListener("click", ()=>{
+  document.getElementById("homeResultScreen")?.classList.remove("show");
+  document.getElementById("homeResultScreen")?.setAttribute("aria-hidden","true");
+  switchPage("homeScene");
+});
+
+let homeReportMode = "normal"; // normal | method | behavior
+
+function setHomeReportMode(mode){
+  homeReportMode = mode;
+
+  document.getElementById("homeReportMethodBox").hidden = mode !== "method";
+  document.getElementById("homeReportBehaviorBox").hidden = mode !== "behavior";
+
+  document.getElementById("homeReportNormalBtn")?.classList.toggle("active", mode === "normal");
+  document.getElementById("homeReportMethodBtn")?.classList.toggle("active", mode === "method");
+  document.getElementById("homeReportBehaviorBtn")?.classList.toggle("active", mode === "behavior");
+}
+
+
+function syncHomeRunScreen(){
+  const timeEl = document.getElementById("homeRunTime");
+  const questEl = document.getElementById("homeRunQuest");
+  const pauseBtn = document.getElementById("homeRunPauseBtn");
+
+  const isPaused = state.status === "paused";
+
+  if(timeEl){
+    const remain = isPaused && homeRunPausedRemain !== null
+      ? homeRunPausedRemain
+      : Math.max(0, (window.homeRunEndTs || 0) - Date.now());
+
+    const s = Math.floor(remain / 1000);
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+
+    timeEl.textContent =
+      String(m).padStart(2,"0") + ":" +
+      String(sec).padStart(2,"0");
+
+    if(remain <= 0 && state.status === "running"){
+  el.stopBtn?.click();
+  hideHomeRunScreen();
+  showHomeReportIntro();
+}
+  }
+
+  if(questEl){
+    questEl.textContent = state.questName || el.questName?.value || "Quest running";
+  }
+
+  if(pauseBtn){
+    pauseBtn.textContent = isPaused ? "Resume" : "Pause";
+    pauseBtn.classList.toggle("resumeMode", isPaused);
+  }
+}
+
+document.getElementById("homeRunPauseBtn")?.addEventListener("click", ()=>{
+  if(state.status === "paused"){
+    window.homeRunEndTs = Date.now() + (homeRunPausedRemain || 0);
+    homeRunPausedRemain = null;
+
+    el.resumeBtn?.click();
+  }else{
+    homeRunPausedRemain = Math.max(0, (window.homeRunEndTs || 0) - Date.now());
+
+    el.pauseBtn?.click();
+  }
+
+  setTimeout(syncHomeRunScreen, 80);
+});
+
+document.getElementById("homeRunStopBtn")?.addEventListener("click", ()=>{
+  el.stopBtn?.click();
+  hideHomeRunScreen();
+  showHomeReportIntro();
+});
+
+document.getElementById("homeRunPlus5Btn")?.addEventListener("click", ()=>{
+  window.homeRunEndTs += 5 * 60000;
+});
+
+document.getElementById("homeRunPlus10Btn")?.addEventListener("click", ()=>{
+  window.homeRunEndTs += 10 * 60000;
 });
 
 /* =========================================
