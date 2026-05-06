@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>SakuraQ v0.13.0 </title>
+    <title>SakuraQ v0.13.1 </title>
 
     <link rel="manifest" href="./manifest.webmanifest">
 
@@ -58,11 +58,7 @@ body{
   margin:0;
   font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
   color:var(--ink);
-background:
-  radial-gradient(900px 600px at 12% 10%, rgba(96,165,250,.18), transparent 58%),
-  radial-gradient(850px 650px at 88% 18%, rgba(34,197,94,.14), transparent 60%),
-  radial-gradient(780px 620px at 50% 96%, rgba(251,191,36,.10), transparent 62%),
-  linear-gradient(180deg, #f8fbff 0%, #eef6ff 48%, #edf9f2 100%);
+background:#f7f9fc;
   overflow:hidden;
 }
 
@@ -2199,6 +2195,22 @@ background-size: 200% 100%;
   isolation:isolate;
 }
 
+.foxMascot{
+  position:absolute;
+  width:clamp(460px, 98vw, 620px);
+
+  left:58%;
+  bottom:155px;
+
+  transform:translateX(-50%);
+  z-index:20;
+
+  pointer-events:none;
+  object-fit:contain;
+
+  filter: drop-shadow(0 16px 26px rgba(15,23,42,.14));
+}
+
 .roomBack{
   position:absolute;
   inset:0;
@@ -2374,30 +2386,44 @@ linear-gradient(
     drop-shadow(0 14px 10px rgba(15,23,42,.10))
     drop-shadow(0 3px 5px rgba(15,23,42,.06));
 }
-
-.mascotAsset{
-  width:45%;
+.roomAsset.mascotAsset.mascotSprite{
+  width:105%;
+  aspect-ratio:1 / 1;
   left:50%;
-  bottom:32%;
+  bottom:24%;
   transform:translateX(-50%);
   z-index:3;
+
+  background-image:url("./mascot-wave.png");
+  background-repeat:no-repeat;
+  background-size:400% 100%;
+  background-position:0% 0%;
+
   filter:
     drop-shadow(0 18px 20px rgba(99,102,241,.10))
     drop-shadow(0 6px 8px rgba(15,23,42,.06));
-  animation: mascotIdle 3s ease-in-out infinite;
+
+  animation: sqMascotWave4 1.35s steps(1, end) infinite !important;
 }
 
-@keyframes mascotIdle{
-  0%{
-    transform:translateX(-50%) translateY(0) scale(1);
+@keyframes sqMascotWave4{
+  0%, 32%{
+    background-position:0% 0%;
   }
-  50%{
-    transform:translateX(-50%) translateY(-3px) scale(1.01);
+
+  33%, 49%{
+    background-position:33.333% 0%;
   }
-  100%{
-    transform:translateX(-50%) translateY(0) scale(1);
+
+  50%, 66%{
+    background-position:66.666% 0%;
+  }
+
+  67%, 100%{
+    background-position:100% 0%;
   }
 }
+
 /* =========================
    HOME HUD
 ========================= */
@@ -4489,6 +4515,8 @@ body.in-app-browser #authGate{
   background:transparent !important;
 }
 
+
+
 .roomBack{
   background:transparent !important;
 }
@@ -5173,6 +5201,282 @@ body.in-app-browser #authGate{
   from{ transform:translateY(-50%) scale(.92); opacity:.7; }
   to{ transform:translateY(-50%) scale(1.12); opacity:1; }
 }
+
+#hqStartBtn.gateLocked{
+  background: linear-gradient(180deg, #ff3b5c, #b91c1c) !important;
+  box-shadow: 2px 5px 0 #7f1d1d !important;
+  cursor: not-allowed;
+  opacity: 1;
+}
+.mascotSprite{
+  background-image: url("./mascot-wave.png");
+  background-repeat: no-repeat;
+  background-position: 0 0;
+  background-size: 400% 100%;
+
+  animation: mascotWave 1.1s steps(4) infinite;
+}
+
+@keyframes mascotWave{
+  from{ background-position: 0% 0; }
+  to{ background-position: 100% 0; }
+}
+
+/* =========================
+   HOME HERO PANEL v2
+========================= */
+
+.homeHeroPanel{
+  position:absolute;
+  left:7%;
+  top:32px;
+  width:min(76%, 320px);
+  z-index:30;
+  display:grid;
+  gap:14px;
+}
+
+.homeSpeechCard,
+.homeProgressCard{
+  border-radius:26px;
+  background:rgba(255,255,255,.82);
+  border:1px solid rgba(255,255,255,.82);
+  box-shadow:
+    0 16px 34px rgba(15,23,42,.08),
+    inset 0 1px 0 rgba(255,255,255,.85);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+}
+
+.homeSpeechCard{
+  position:relative;
+  min-height:88px;
+  padding:14px 16px 14px 82px;
+  display:flex;
+  align-items:center;
+}
+
+.homeSpeechCard::after{
+  content:"";
+  position:absolute;
+  left:34px;
+  bottom:-13px;
+  width:24px;
+  height:24px;
+  background:rgba(255,255,255,.82);
+  border-left:1px solid rgba(255,255,255,.82);
+  border-bottom:1px solid rgba(255,255,255,.82);
+  transform:rotate(45deg);
+  border-radius:0 0 6px 0;
+}
+
+.homeSpeechAvatar{
+  position:absolute;
+  left:16px;
+  top:50%;
+  width:52px;
+  height:52px;
+  transform:translateY(-50%);
+  border-radius:16px;
+  background:linear-gradient(180deg,#eef7ff,#fff);
+  display:grid;
+  place-items:center;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.85);
+}
+
+.homeGreeting{
+  font-size:18px;
+  line-height:1.15;
+  font-weight:950;
+  letter-spacing:-.03em;
+  color:#25365f;
+}
+
+.homeSubMessage{
+  margin-top:6px;
+  font-size:15px;
+  font-weight:750;
+  color:#64708f;
+}
+
+.homeSubMessage b{
+  color:#25365f;
+  font-weight:950;
+}
+
+.homeProgressCard{
+  padding:14px 16px 16px;
+}
+
+.homeProgressTop{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+
+#homeProgressBig{
+  font-size:42px;
+  line-height:1;
+  font-weight:1000;
+  letter-spacing:-.06em;
+  color:#203869;
+}
+
+.homeProgressMax{
+  font-size:20px;
+  font-weight:800;
+  color:#5f6983;
+}
+
+.homeProgressGain{
+  font-size:17px;
+  font-weight:950;
+  color:#31c77b;
+  white-space:nowrap;
+}
+
+.homeProgressTrack{
+  margin-top:14px;
+  height:14px;
+  border-radius:999px;
+  background:rgba(34,197,94,.14);
+  overflow:hidden;
+  box-shadow:inset 0 1px 2px rgba(15,23,42,.08);
+}
+
+.homeProgressFill{
+  height:100%;
+  border-radius:999px;
+  background:linear-gradient(90deg,#29d7d3,#54e887,#39d86d);
+  box-shadow:0 0 18px rgba(45,212,191,.34);
+}
+
+#homeStartQuestBtn.homeStartQuestBtn{
+  width:max-content;
+  min-width:188px;
+  height:54px;
+  padding:0 22px;
+  border-radius:999px;
+
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+
+  color:#ffffff !important;
+  font-size:18px;
+  font-weight:950;
+
+  background:
+    radial-gradient(circle at 26% 20%, rgba(255,255,255,.78), transparent 30%),
+    linear-gradient(90deg,#4bdff0 0%, #72f5c9 46%, #a9f56b 100%) !important;
+
+  border:1px solid rgba(255,255,255,.68);
+
+  text-shadow:
+    0 2px 5px rgba(15,23,42,.24);
+
+  box-shadow:
+    0 14px 28px rgba(45,212,191,.32),
+    inset 0 1px 0 rgba(255,255,255,.65);
+
+  animation:none;
+}
+
+#homeStartQuestBtn.homeStartQuestBtn:active{
+  transform:scale(.97);
+}
+
+/* CSS dog/paw icon ไม่ใช้อีโมจิ */
+.cssDogPaw,
+.pawMini{
+  position:relative;
+  display:inline-block;
+  width:22px;
+  height:19px;
+  flex:0 0 auto;
+}
+
+.cssDogPaw::before,
+.pawMini::before{
+  content:"";
+  position:absolute;
+  left:50%;
+  bottom:0;
+  width:12px;
+  height:10px;
+  transform:translateX(-50%);
+  border-radius:60% 60% 55% 55%;
+  background:rgba(255,255,255,.92);
+}
+
+.cssDogPaw::after,
+.pawMini::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:
+    radial-gradient(circle at 4px 5px, rgba(255,255,255,.92) 0 3px, transparent 3.5px),
+    radial-gradient(circle at 11px 2px, rgba(255,255,255,.92) 0 3px, transparent 3.5px),
+    radial-gradient(circle at 18px 5px, rgba(255,255,255,.92) 0 3px, transparent 3.5px);
+}
+
+.pawMini{
+  width:20px;
+  height:17px;
+  vertical-align:-2px;
+  opacity:.55;
+}
+
+.pawMini::before,
+.pawMini::after{
+  filter:invert(42%) sepia(10%) saturate(950%) hue-rotate(190deg);
+}
+
+.homeStartArrow{
+  font-size:30px;
+  line-height:1;
+  font-weight:700;
+  margin-left:2px;
+}
+
+/* tiny CSS dog face in avatar */
+.cssDogIcon{
+  position:relative;
+  width:36px;
+  height:34px;
+  border-radius:42% 42% 48% 48%;
+  background:linear-gradient(180deg,#74c7ff,#b992ff 72%,#fff 73%);
+  box-shadow:inset 0 -6px 0 rgba(255,255,255,.65);
+}
+
+.cssDogIcon::before{
+  content:"";
+  position:absolute;
+  left:3px;
+  top:-7px;
+  width:13px;
+  height:17px;
+  border-radius:10px 10px 4px 4px;
+  background:linear-gradient(180deg,#74c7ff,#b992ff);
+  transform:rotate(-18deg);
+  box-shadow:20px 7px 0 -1px #91b8ff;
+}
+
+.cssDogIcon::after{
+  content:"";
+  position:absolute;
+  left:8px;
+  top:12px;
+  width:4px;
+  height:4px;
+  border-radius:999px;
+  background:#18264d;
+  box-shadow:
+    16px 0 0 #18264d,
+    8px 8px 0 2px #18264d;
+}
 </style>
 </head>
 <body>
@@ -5209,46 +5513,47 @@ body.in-app-browser #authGate{
   <section id="homeScene" class="page page-active" aria-label="SakuraQ Home Scene">
     <div class="roomCard">
       <div class="roomScene">
-        <div class="roomBack"></div>
-        <div class="roomFloor"></div>
 
-        <img src="desk.png" alt="" class="roomAsset deskAsset">
-        <img src="shelf.png" alt="" class="roomAsset shelfAsset">
-        <img src="phone.png" alt="" class="roomAsset phoneAsset">
-        <img src="dumbbell.png" alt="" class="roomAsset dumbbellAsset">
-        <img src="mascot.png" alt="SakuraQ mascot" class="roomAsset mascotAsset">
+        <div class="homeHeroPanel">
+  <div class="homeSpeechCard">
+    <div class="homeSpeechAvatar">
+      <div class="cssDogIcon"></div>
+    </div>
 
-        <div class="homeHud">
-          <div class="homeHudTop">
-            <div class="homeAvatar">
-              <img src="logo-192.png" alt="User avatar">
-            </div>
-            
-            
+    <div class="homeSpeechText">
+      <div class="homeGreeting">สวัสดีนะ </div>
+      <div class="homeSubMessage">วันนี้เริ่มไป <b>26.4</b> แล้วนะ <span class="pawMini"></span></div>
+    </div>
+  </div>
 
-            <div class="homeUserMeta">
-              <div class="homeUserName" id="homeUserName">
-                <span class="homeUserNameText">MaAMha</span>
-                <span class="homeEditHint">✎</span>
-              </div>
-              <div class="homeUserSub" id="homeUserSub">Level 1 • SakuraQ User</div>
-            </div>
-          </div>
+  <div class="homeProgressCard">
+    <div class="homeProgressTop">
+      <div><span id="homeProgressBig">26.4</span><span class="homeProgressMax"> / 100</span></div>
+      <div class="homeProgressGain">+14 วันนี้ ›</div>
+    </div>
 
-          <div class="homeLevelRow">
-            <div class="homeLevelLabel">Daily Progress</div>
-            <div class="homeLevelValue" id="homeLevelValue">0 / 100</div>
-          </div>
+    <div class="homeProgressTrack">
+      <div class="homeProgressFill" style="width:26.4%"></div>
+    </div>
+  </div>
 
-          <div class="homeLevelBar">
-            <div class="homeLevelFill" id="homeLevelFill"></div>
-          </div>
-        </div>
-
-  <div class="homeStreakBadge" id="homeStreakBadge" aria-label="Current streak">
-  <span class="sqFire md" aria-hidden="true"></span>
-  <span class="homeStreakValue" id="homeStreakValue">1</span>
+  <button id="homeStartQuestBtn" class="homeStartQuestBtn" type="button">
+    <span class="cssDogPaw"></span>
+    <span>ไปต่อกันมั้ย?</span>
+    <span class="homeStartArrow">›</span>
+  </button>
 </div>
+        <video
+  class="foxMascot"
+  autoplay
+  muted
+  loop
+  playsinline
+>
+  <source src="./fox-idle.webm" type="video/webm">
+</video>
+
+
 
       </div>
     </div>
@@ -5337,7 +5642,7 @@ body.in-app-browser #authGate{
                   <div class="brandMeta">
                     <div class="brandTitleRow">
                       <h1>SakuraQ</h1>
-                      <span class="versionBadge">v0.13.0</span>
+                      <span class="versionBadge">v0.13.1</span>
                     </div>
                     <div class="sub" id="todayText">Today: ----</div>
                   </div>
@@ -6164,12 +6469,6 @@ body.in-app-browser #authGate{
   </div>
 </div>
 
- <!-- Home Start Bar -->
-<div class="questBar" id="questBar">
-  <button id="homeStartQuestBtn" class="homeStartQuestBtn" type="button">
-    Start Quest
-  </button>
-</div>
 
   <!-- Bottom Navigation -->
 <nav class="bottomNav" aria-label="Main Navigation">
@@ -8032,13 +8331,19 @@ console.log("[GATE after gateMaybeLock]", {
   return true;
 }
   function gateEnforceStartButton(){
-    if(!el.startBtn) return;
-    if(state.status !== "idle"){
-      el.startBtn.disabled = true;
-      return;
-    }
-    el.startBtn.disabled = !gateCanStartQuest();
+  const locked = state.status === "idle" && !gateCanStartQuest();
+
+  if(el.startBtn){
+    el.startBtn.disabled = state.status !== "idle" || locked;
   }
+
+  const hqBtn = document.getElementById("hqStartBtn");
+  if(hqBtn){
+    hqBtn.disabled = locked;
+    hqBtn.classList.toggle("gateLocked", locked);
+    hqBtn.textContent = locked ? "Morning Gate Locked" : "Start";
+  }
+}
   function gateStartFromCover(){
     if(!isGateActiveToday()){
       hideGateCover();
@@ -12334,6 +12639,16 @@ document.getElementById("hqBackBtn")?.addEventListener("click", ()=>{
 });
 
 document.getElementById("hqStartBtn")?.addEventListener("click", ()=>{
+
+  gateMaybeLock();
+  gateEnforceStartButton();
+
+  if(!gateCanStartQuest()){
+    showActionLockBar("Morning Gate locked: เริ่มเควสไม่ได้จนกว่าจะปลดล็อกหรือผ่านเงื่อนไข");
+    renderGateUX();
+    return;
+  }
+
   const name = document.getElementById("hqQuestName")?.value.trim();
 
   const cleanName = normQuestName(name);
